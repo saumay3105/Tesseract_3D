@@ -4,10 +4,7 @@ import { GizmoHelper, OrbitControls, GizmoViewport } from "@react-three/drei";
 import { useState } from "react";
 import ShapeControls from "./ShapeControls";
 import Timeline from "./Timeline";
-
 import Grid from "./Grid";
-import AnimationToolbar from "./AnimationToolbar";
-import useAnimationControls from "../hooks/useAnimationControls";
 
 const SceneRenderer = ({
   shapes,
@@ -22,29 +19,9 @@ const SceneRenderer = ({
   playAnimation,
   stopAnimation,
   animationData,
-  interpolateFrames,
+  animationStates,
 }) => {
-  const {
-    animationStates,
-    toggleAnimation,
-    removeAnimation,
-    getShapeAnimations,
-  } = useAnimationControls();
   const [keyframes, setKeyframes] = useState({});
-
-  const handleApplyAnimation = (animation) => {
-    if (selectedObject) {
-      const animationType = animation.toLowerCase();
-      toggleAnimation(selectedObject.id, animationType);
-    }
-  };
-
-  const handleDeleteAnimation = (animation) => {
-    if (selectedObject) {
-      const animationType = animation.toLowerCase();
-      removeAnimation(selectedObject.id, animationType);
-    }
-  };
 
   useEffect(() => {
     setKeyframes(animationData[selectedObject?.id] || {});
@@ -82,14 +59,6 @@ const SceneRenderer = ({
           />
         </GizmoHelper>
       </Canvas>
-
-      {selectedObject && (
-        <AnimationToolbar
-          appliedAnimations={getShapeAnimations(selectedObject.id)}
-          onApply={handleApplyAnimation}
-          onDelete={handleDeleteAnimation}
-        />
-      )}
 
       <Timeline
         currentFrame={currentFrame}

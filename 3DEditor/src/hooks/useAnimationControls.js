@@ -4,22 +4,22 @@ const useAnimationControls = () => {
   const [animationStates, setAnimationStates] = useState({});
 
   const toggleAnimation = (shapeId, animationType) => {
-    setAnimationStates(prev => ({
+    setAnimationStates((prev) => ({
       ...prev,
       [shapeId]: {
         ...prev[shapeId],
-        [animationType]: !prev[shapeId]?.[animationType]
-      }
+        [animationType]: !prev[shapeId]?.[animationType],
+      },
     }));
   };
 
   const removeAnimation = (shapeId, animationType) => {
-    setAnimationStates(prev => ({
+    setAnimationStates((prev) => ({
       ...prev,
       [shapeId]: {
         ...prev[shapeId],
-        [animationType]: false
-      }
+        [animationType]: false,
+      },
     }));
   };
 
@@ -33,7 +33,7 @@ const useAnimationControls = () => {
     animationStates,
     toggleAnimation,
     removeAnimation,
-    getShapeAnimations
+    getShapeAnimations,
   };
 };
 

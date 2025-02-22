@@ -3,6 +3,8 @@ import Sidebar from "../Sidebar";
 import SceneRenderer from "../SceneRenderer";
 import Toolbar from "../Toolbar";
 import useKeyboardShortcuts from "../../hooks/useKeyboardShortcuts";
+import ObjectProperties from "../ObjectProperties";
+import useAnimationControls from "../../hooks/useAnimationControls";
 
 const shapeLibrary = {
   basic: [
@@ -59,6 +61,12 @@ const shapeLibrary = {
 };
 
 const Playground = () => {
+  const {
+    animationStates,
+    toggleAnimation,
+    removeAnimation,
+    getShapeAnimations,
+  } = useAnimationControls();
   const [shapes, setShapes] = useState([]);
   const [history, setHistory] = useState([]);
   const [selectedObject, setSelectedObject] = useState(null);
@@ -251,8 +259,11 @@ const Playground = () => {
           selectedObject={selectedObject}
           setSelectedObject={setSelectedObject}
           updateObject={updateObject}
-          deleteShape={deleteShape}
           setBackground={setBackground}
+          animationStates={animationStates}
+          toggleAnimation={toggleAnimation}
+          removeAnimation={removeAnimation}
+          getShapeAnimations={getShapeAnimations}
         />
         <SceneRenderer
           shapes={shapes}
@@ -268,8 +279,14 @@ const Playground = () => {
           interpolateFrames={interpolateFrames}
           stopAnimation={stopAnimation}
           animationData={animationData}
+          animationStates={animationStates}
         />
         <Toolbar undo={undo} unselect={unselect} />
+        <ObjectProperties
+          selectedObject={selectedObject}
+          updateObject={updateObject}
+          deleteShape={deleteShape}
+        />
       </div>
     </div>
   );
