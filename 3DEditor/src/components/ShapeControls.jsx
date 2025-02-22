@@ -90,8 +90,6 @@ const ShapeControls = ({
   isSelected,
   selectedObject,
   updateObject,
-  enableRotation = false,
-  enableFloating = false,
   mode = "translate",
   animationStates = {},
   shapeAnimationData,
