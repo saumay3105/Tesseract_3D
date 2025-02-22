@@ -52,7 +52,10 @@ const ObjectProperties = ({
         axis === "y"
           ? degrees * (Math.PI / 180)
           : selectedObject.rotation[1] || 0,
-        selectedObject.rotation[2] || 0,
+        
+        axis === "z"
+          ? degrees * (Math.PI / 180)
+          : selectedObject.rotation[2] || 0,
       ],
     });
   };
