@@ -14,21 +14,24 @@ const SceneRenderer = ({
   background,
   isRotationEnabled,
 }) => {
-  const { animations, addAnimation, removeAnimation } = useAnimationControls();
-
-  const handleShapeClick = (id) => {
-    setSelectedObject(shapes.find((s) => s.id === id));
-  };
+  const {
+    animationStates,
+    toggleAnimation,
+    removeAnimation,
+    getShapeAnimations,
+  } = useAnimationControls();
 
   const handleApplyAnimation = (animation) => {
     if (selectedObject) {
-      addAnimation(selectedObject.id, animation);
+      const animationType = animation.toLowerCase();
+      toggleAnimation(selectedObject.id, animationType);
     }
   };
 
-  const handleDeleteAnimation = (animationId) => {
+  const handleDeleteAnimation = (animation) => {
     if (selectedObject) {
-      removeAnimation(selectedObject.id, animationId);
+      const animationType = animation.toLowerCase();
+      removeAnimation(selectedObject.id, animationType);
     }
   };
 
@@ -45,9 +48,12 @@ const SceneRenderer = ({
             key={shape.id}
             shape={shape}
             setShapes={setShapes}
-            onClick={() => handleShapeClick(shape.id)}
+            onClick={() =>
+              setSelectedObject(shapes.find((s) => s.id === shape.id))
+            }
             isSelected={selectedObject?.id === shape.id}
-            animations={animations?.[shape.id] || []} // ✅ Pass applied animations
+            selectedObject={selectedObject}
+            animationStates={animationStates}
           />
         ))}
 
@@ -61,7 +67,7 @@ const SceneRenderer = ({
 
       {selectedObject && (
         <AnimationToolbar
-          appliedAnimations={animations?.[selectedObject.id] || []}
+          appliedAnimations={getShapeAnimations(selectedObject.id)}
           onApply={handleApplyAnimation}
           onDelete={handleDeleteAnimation}
         />
