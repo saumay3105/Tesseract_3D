@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Sidebar from "../Sidebar";
 import SceneRenderer from "../SceneRenderer";
 import useKeyboardShortcuts from "../../hooks/useKeyboardShortcuts";
@@ -73,7 +73,6 @@ const Playground = () => {
   const [isRotationEnabled, setIsRotationEnabled] = useState(false);
   const [currentFrame, setCurrentFrame] = useState(0);
   const [animationData, setAnimationData] = useState({});
-  const [isAnimating, setIsAnimating] = useState(false);
 
   const findShapeIcon = (shapeType) => {
     for (const category of Object.values(shapeLibrary)) {
@@ -161,80 +160,6 @@ const Playground = () => {
     }
   };
 
-  const setFrame = (frameNumber) => {
-    setCurrentFrame(frameNumber);
-
-    // Update shapes to match the selected frame's state
-    const updatedShapes = shapes.map((shape) => {
-      const frameData = animationData[shape.id]?.[frameNumber];
-      if (!frameData) {
-        // If no keyframe data exists for this frame, find the nearest previous keyframe
-        const previousFrames = Object.keys(animationData[shape.id] || {})
-          .map(Number)
-          .filter((frame) => frame <= frameNumber)
-          .sort((a, b) => b - a);
-
-        const nearestFrame = previousFrames[0];
-        return nearestFrame
-          ? { ...shape, ...animationData[shape.id][nearestFrame] }
-          : shape;
-      }
-      return { ...shape, ...frameData };
-    });
-
-    setShapes(updatedShapes);
-  };
-
-  const interpolateFrames = (startFrame, endFrame) => {
-    const numFrames = endFrame - startFrame;
-    shapes.forEach((shape) => {
-      const startData = animationData[shape.id]?.[startFrame];
-      const endData = animationData[shape.id]?.[endFrame];
-
-      if (startData && endData) {
-        // Create interpolated frames
-        for (let frame = startFrame + 1; frame < endFrame; frame++) {
-          const progress = (frame - startFrame) / numFrames;
-
-          setAnimationData((prev) => ({
-            ...prev,
-            [shape.id]: {
-              ...prev[shape.id],
-              [frame]: {
-                position: startData.position.map(
-                  (start, i) => start + (endData.position[i] - start) * progress
-                ),
-                rotation: startData.rotation.map(
-                  (start, i) => start + (endData.rotation[i] - start) * progress
-                ),
-                scale:
-                  startData.scale +
-                  (endData.scale - startData.scale) * progress,
-              },
-            },
-          }));
-        }
-      }
-    });
-  };
-
-  const playAnimation = async (startFrame, endFrame, fps = 30) => {
-    setIsAnimating(true);
-    const frameTime = 1000 / fps;
-
-    for (let frame = startFrame; frame <= endFrame; frame++) {
-      if (!isAnimating) break;
-      setFrame(frame);
-      await new Promise((resolve) => setTimeout(resolve, frameTime));
-    }
-
-    setIsAnimating(false);
-  };
-
-  const stopAnimation = () => {
-    setIsAnimating(false);
-  };
-
   const undo = () => {
     if (history.length > 0) {
       setShapes(history[history.length - 1]);
@@ -274,9 +199,6 @@ const Playground = () => {
           currentFrame={currentFrame}
           setCurrentFrame={setCurrentFrame}
           updateObject={updateObject}
-          playAnimation={playAnimation}
-          interpolateFrames={interpolateFrames}
-          stopAnimation={stopAnimation}
           animationData={animationData}
           animationStates={animationStates}
         />

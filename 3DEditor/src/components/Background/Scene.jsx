@@ -1,19 +1,12 @@
-import React, { useRef, useEffect } from 'react';
-import { useFrame, useThree } from '@react-three/fiber';
-import * as THREE from 'three';
-import { GridFloor } from './Gridfloor';
-import { Decorations } from './Decorations';
-import { Character } from './Character';
+import React, { useRef, useEffect } from "react";
+import { useFrame, useThree } from "@react-three/fiber";
+import * as THREE from "three";
+import { GridFloor } from "./Gridfloor";
+import { Decorations } from "./Decorations";
+import { Character } from "./Character";
 
-export const Scene = () => {
-  const { camera } = useThree();
-  const groupRef = useRef();
-  
-  useEffect(() => {
-    camera.position.set(8, 8, 8);
-    camera.lookAt(0, 0, 0);
-  }, [camera]);
 
+export const useHoverAnimation = (groupRef) => {
   useFrame((state) => {
     const { mouse } = state;
     if (groupRef.current) {
@@ -29,11 +22,23 @@ export const Scene = () => {
       );
     }
   });
+};
+
+export const Scene = () => {
+  const { camera } = useThree();
+  const groupRef = useRef();
+
+  useEffect(() => {
+    camera.position.set(8, 8, 8);
+    camera.lookAt(0, 0, 0);
+  }, [camera]);
+
+  useHoverAnimation(groupRef);
 
   return (
     <group ref={groupRef}>
-      <GridFloor/>
-      <Decorations/>
+      <GridFloor />
+      <Decorations />
       <Character position={[0, 0.5, 0]} />
     </group>
   );

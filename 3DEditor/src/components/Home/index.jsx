@@ -1,5 +1,6 @@
 import { lazy, Suspense } from "react";
 import { Background3D } from "../Background/Background3D";
+import CompiledScene from "../CompiledScene";
 const Header = lazy(() => import("../Header"));
 
 const LoadingSpinner = () => (
@@ -12,10 +13,10 @@ const Home = () => {
   return (
     <div className="min-h-screen bg-[#0A0A0B] text-white relative overflow-hidden">
       <Suspense fallback={<LoadingSpinner />}>
-        <Background3D />
+        {/* <Background3D /> */}
+        <CompiledScene />
       </Suspense>
 
-      
       <div className="relative z-10">
         <Suspense fallback={<LoadingSpinner />}>
           <Header />
