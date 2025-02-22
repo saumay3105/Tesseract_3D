@@ -1,19 +1,26 @@
 import { geometryDefinitions } from "./geometryDefinition";
+import modelConfigs from "./modelConfigs.json";
 
-// Function to analyze which geometries are used
+// Function to analyze which geometries and models are used
 const analyzeShapeUsage = (shapes) => {
   const usedGeometries = new Set();
+  const usedImportedModels = new Set();
+  const usedModels = new Set();
   const basicShapes = new Set();
 
   shapes.forEach((shape) => {
-    if (geometryDefinitions[shape.type]) {
+    if (shape.type === "importedModel") {
+      usedImportedModels.add(shape.modelType);
+    } else if (modelConfigs[shape.type]) {
+      usedModels.add(shape.type);
+    } else if (geometryDefinitions[shape.type]) {
       usedGeometries.add(shape.type);
     } else {
       basicShapes.add(shape.type);
     }
   });
 
-  return { usedGeometries, basicShapes };
+  return { usedGeometries, usedModels, usedImportedModels, basicShapes };
 };
 
 // Generate imports section
@@ -21,6 +28,10 @@ const generateImports = (usedGeometries, basicShapes) => {
   return `import React, { Suspense, useRef, useEffect } from 'react';
   import { Canvas } from '@react-three/fiber';
   import { OrbitControls } from '@react-three/drei';
+  import { useGLTF } from "@react-three/drei";
+  import { useTexture } from "@react-three/drei";
+  import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
+  import { useLoader } from "@react-three/fiber";
   import * as THREE from 'three';`;
 };
 
@@ -63,68 +74,126 @@ const generateCustomGeometryComponent = (usedGeometries) => {
   };`;
 };
 
+// Model component for loading GLTF models
+const generateModelComponent = (usedModels) => {
+  if (usedModels.size === 0) return "";
+
+  return `
+    const Model = ({ modelPath, position, rotation, scale, defaultScale = 1 }) => {
+      const gltf = useGLTF(modelPath);
+      const scene = gltf.scene.clone();
+      
+      scene.traverse((node) => {
+        if (node.isMesh) {
+          node.material = node.material.clone();
+          node.material.emissiveIntensity = 0;
+          node.material.transparent = false;
+          node.material.opacity = 1;
+        }
+      });
+      
+      scene.position.set(...position);
+      scene.rotation.set(...rotation);
+      scene.scale.set(scale * defaultScale, scale * defaultScale, scale * defaultScale);
+      
+      return <primitive object={scene} />;
+    };`;
+};
+
+const generateImportedModelComponent = (usedImportedModels) => {
+  if (usedImportedModels.size === 0) return "";
+
+  return `const ImportedModel = ({ shape }) => {
+    try {
+      switch (shape.modelType) {
+        case "glb":
+        case "gltf":
+          const model = useLoader(GLTFLoader, shape.modelUrl);
+          return <primitive object={model.scene} />;
+        case "obj":
+          const objModel = useLoader(OBJLoader, shape.modelUrl);
+          return <primitive object={objModel} />;
+        case "stl":
+          const geometry = useLoader(STLLoader, shape.modelUrl);
+          return (
+            <mesh geometry={geometry}>
+              <meshStandardMaterial
+                color={shape.color}
+                opacity={1}
+              />
+            </mesh>
+          );
+        default:
+          return null;
+      }
+    } catch (error) {
+      console.error("Error loading model:", error);
+      return null;
+    }
+  };`;
+};
+
 // Helper function to generate JSX for each shape
 const generateShapeJSX = (shape) => {
-  const { position, rotation, scale, color, type } = shape;
+  const { position, rotation, scale, color, type, texturePath } = shape;
   const pos = `[${position.join(", ")}]`;
   const rot = `[${rotation.join(", ")}]`;
 
-  if (geometryDefinitions[type]) {
-    return `<CustomGeometry
-            type="${type}"
-            position={${pos}}
-            rotation={${rot}}
-            scale={[${scale}, ${scale}, ${scale}]}>
-            <meshStandardMaterial color="${color}" />
-          </CustomGeometry>`;
+  const isModelType = modelConfigs[type];
+  const texture = texturePath ? `useTexture('${texturePath}')` : "null";
+
+  if (shape.type === "importedModel") {
+    return `<ImportedModel shape={${JSON.stringify(shape)}} />`;
   }
 
-  const geometryArgs = {
-    cube: "[1, 1, 1]",
-    sphere: "[0.7, 32, 32]",
-    cone: "[0.5, 1, 32]",
-    cylinder: "[0.5, 0.5, 1, 32]",
-    torus: "[0.5, 0.2, 16, 100]",
-    plane: "[2, 2]",
-    tetrahedron: "[0.8]",
-    octahedron: "[0.8]",
-    dodecahedron: "[0.8]",
-    icosahedron: "[0.8]",
-  };
+  if (isModelType) {
+    return `<Model modelPath="${modelConfigs[type].path}" position={${pos}} rotation={${rot}} scale={${scale}} defaultScale={${modelConfigs[type].scale}} />`;
+  }
 
-  const geometryType = `${type}Geometry`;
+  if (geometryDefinitions[type]) {
+    return `<CustomGeometry
+                type="${type}"
+                position={${pos}}
+                rotation={${rot}}
+                scale={[${scale}, ${scale}, ${scale}]}>
+                <meshStandardMaterial color="${color}" />
+              </CustomGeometry>`;
+  }
+
   return `<mesh position={${pos}} rotation={${rot}} scale={[${scale}, ${scale}, ${scale}]}>
-            <${geometryType} args={${geometryArgs[type] || "[1, 1, 1]"}} />
-            <meshStandardMaterial color="${color}" />
-          </mesh>`;
+              <${type}Geometry />
+              <meshStandardMaterial color="${color}" map={${texture}} />
+            </mesh>`;
 };
 
 // Main export function
-export const exportScene = (shapes) => {
-  const { usedGeometries, basicShapes } = analyzeShapeUsage(shapes);
+export const exportScene = (shapes, modelConfigs) => {
+  const { usedGeometries, usedModels, usedImportedModels, basicShapes } =
+    analyzeShapeUsage(shapes);
 
-  const componentCode = `${generateImports(usedGeometries, basicShapes)}
+  const componentCode = `${generateImports()}
+    
+    ${generateGeometryFunctions(usedGeometries)}
+    ${generateCustomGeometryComponent(usedGeometries)}
+    ${generateModelComponent(usedModels)}
+    ${generateImportedModelComponent(usedImportedModels)}
+    
+  const CompiledScene = () => {
+    return (
+      <div className="absolute inset-0">
+      <Canvas camera={{ position: [5, 5, 5], fov: 50 }}>
+        <ambientLight intensity={0.5} />
+        <directionalLight position={[5, 5, 5]} />
+        <OrbitControls makeDefault />
+        <Suspense fallback={null}>
+          ${shapes.map((shape) => generateShapeJSX(shape)).join("\n        ")}
+        </Suspense>
+      </Canvas>
+      </div>
+    );
+  };
   
-  ${generateGeometryFunctions(usedGeometries)}
-  ${generateCustomGeometryComponent(usedGeometries)}
-
-  
-const CompiledScene = () => {
-  return (
-    <div className="absolute inset-0">
-    <Canvas camera={{ position: [5, 5, 5], fov: 50 }}>
-      <ambientLight intensity={0.5} />
-      <directionalLight position={[5, 5, 5]} />
-      <OrbitControls makeDefault />
-      <Suspense fallback={null}>
-        ${shapes.map((shape) => generateShapeJSX(shape)).join("\n        ")}
-      </Suspense>
-    </Canvas>
-    </div>
-  );
-};
-
-export default CompiledScene;`;
+  export default CompiledScene;`;
 
   // Create and download the file
   const blob = new Blob([componentCode], { type: "text/javascript" });

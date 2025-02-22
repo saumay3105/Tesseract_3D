@@ -1,131 +1,36 @@
 import React, { Suspense, useRef, useEffect } from "react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
+import { useGLTF } from "@react-three/drei";
+import { useTexture } from "@react-three/drei";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
+import { useLoader } from "@react-three/fiber";
 import * as THREE from "three";
 
-const createPrismGeometry = () => {
-  return new THREE.CylinderGeometry(1, 1, 1, 6);
-};
-
-const createStairsGeometry = () => {
-  const steps = 5;
-  const width = 1;
-  const stepHeight = 0.2;
-  const stepDepth = 0.3;
-
-  const geometry = new THREE.BufferGeometry();
-  const vertices = [];
-  const indices = [];
-  const normals = [];
-  const uvs = [];
-
-  for (let i = 0; i < steps; i++) {
-    const y = i * stepHeight;
-    const z = -i * stepDepth;
-
-    vertices.push(
-      -width / 2,
-      y,
-      z,
-      width / 2,
-      y,
-      z,
-      width / 2,
-      y + stepHeight,
-      z,
-      -width / 2,
-      y + stepHeight,
-      z,
-      -width / 2,
-      y + stepHeight,
-      z,
-      width / 2,
-      y + stepHeight,
-      z,
-      width / 2,
-      y + stepHeight,
-      z - stepDepth,
-      -width / 2,
-      y + stepHeight,
-      z - stepDepth
-    );
-
-    const baseIndex = i * 8;
-    indices.push(
-      baseIndex,
-      baseIndex + 1,
-      baseIndex + 2,
-      baseIndex,
-      baseIndex + 2,
-      baseIndex + 3,
-      baseIndex + 4,
-      baseIndex + 5,
-      baseIndex + 6,
-      baseIndex + 4,
-      baseIndex + 6,
-      baseIndex + 7
-    );
-
-    normals.push(
-      0,
-      0,
-      1,
-      0,
-      0,
-      1,
-      0,
-      0,
-      1,
-      0,
-      0,
-      1,
-      0,
-      1,
-      0,
-      0,
-      1,
-      0,
-      0,
-      1,
-      0,
-      0,
-      1,
-      0
-    );
-
-    uvs.push(0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1);
+const ImportedModel = ({ shape }) => {
+  try {
+    switch (shape.modelType) {
+      case "glb":
+      case "gltf":
+        const model = useLoader(GLTFLoader, shape.modelUrl);
+        return <primitive object={model.scene} />;
+      case "obj":
+        const objModel = useLoader(OBJLoader, shape.modelUrl);
+        return <primitive object={objModel} />;
+      case "stl":
+        const geometry = useLoader(STLLoader, shape.modelUrl);
+        return (
+          <mesh geometry={geometry}>
+            <meshStandardMaterial color={shape.color} opacity={1} />
+          </mesh>
+        );
+      default:
+        return null;
+    }
+  } catch (error) {
+    console.error("Error loading model:", error);
+    return null;
   }
-
-  geometry.setAttribute(
-    "position",
-    new THREE.Float32BufferAttribute(vertices, 3)
-  );
-  geometry.setAttribute("normal", new THREE.Float32BufferAttribute(normals, 3));
-  geometry.setAttribute("uv", new THREE.Float32BufferAttribute(uvs, 2));
-  geometry.setIndex(indices);
-
-  return geometry;
-};
-
-const CustomGeometry = ({ type, ...props }) => {
-  const geometryRef = useRef();
-
-  useEffect(() => {
-    let geometry;
-    switch (type) {
-      case "prism":
-        geometry = createPrismGeometry();
-        break;
-      case "stairs":
-        geometry = createStairsGeometry();
-        break;
-    }
-    if (geometryRef.current) {
-      geometryRef.current.geometry = geometry;
-    }
-  }, [type]);
-
-  return <mesh ref={geometryRef} {...props} />;
 };
 
 const CompiledScene = () => {
@@ -136,34 +41,20 @@ const CompiledScene = () => {
         <directionalLight position={[5, 5, 5]} />
         <OrbitControls makeDefault />
         <Suspense fallback={null}>
-          <mesh
-            position={[-2.2, 0, -0.1]}
-            rotation={[0, 0, 0]}
-            scale={[1, 1, 1]}
-          >
-            <sphereGeometry args={[0.7, 32, 32]} />
-            <meshStandardMaterial color="#888888" />
-          </mesh>
-          <mesh position={[0, 0.2, -3]} rotation={[0, 0, 0]} scale={[1, 1, 1]}>
-            <octahedronGeometry args={[0.8]} />
-            <meshStandardMaterial color="#888888" />
-          </mesh>
-          <CustomGeometry
-            type="prism"
-            position={[-0.2, -2.2, -0.6]}
-            rotation={[0, 0, 0]}
-            scale={[1, 1, 1]}
-          >
-            <meshStandardMaterial color="#888888" />
-          </CustomGeometry>
-          <CustomGeometry
-            type="stairs"
-            position={[1.8, 1.2, 0]}
-            rotation={[0, 0, 0]}
-            scale={[1, 1, 1]}
-          >
-            <meshStandardMaterial color="#888888" />
-          </CustomGeometry>
+          <ImportedModel
+            shape={{
+              id: 1740250981042,
+              type: "importedModel",
+              modelUrl:
+                "blob:http://localhost:5173/103bf32b-e790-4ef5-a723-1d328d40ba21",
+              modelType: "glb",
+              position: [0, 0, 0],
+              rotation: [0, 0, 0],
+              scale: 1,
+              color: "#888888",
+              name: "mini_robot.glb",
+            }}
+          />
         </Suspense>
       </Canvas>
     </div>
