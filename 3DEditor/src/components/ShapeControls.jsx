@@ -1,4 +1,4 @@
-import { useRef, useState, Suspense } from "react";
+import { useRef, useState, Suspense, useEffect } from "react";
 import { useFrame } from "@react-three/fiber";
 import {
   TransformControls,
@@ -37,13 +37,11 @@ const Model = ({ modelId, isSelected }) => {
     }
   });
 
-  // Apply the default scale
   scene.scale.set(defaultScale, defaultScale, defaultScale);
-
   return <primitive object={scene} />;
 };
 
-// Custom geometry functions
+// Custom geometry functions remain the same
 const createPrismGeometry = () => {
   return new THREE.CylinderGeometry(1, 1, 1, 6);
 };
@@ -70,22 +68,20 @@ const createArchGeometry = () => {
   shape.lineTo(-1, 1.5);
   shape.lineTo(-1, 0);
 
-  const extrudeSettings = {
+  return new THREE.ExtrudeGeometry(shape, {
     steps: 1,
     depth: 0.3,
     bevelEnabled: false,
-  };
-
-  return new THREE.ExtrudeGeometry(shape, extrudeSettings);
+  });
 };
 
 const createStairsGeometry = () => {
+  const geometry = new THREE.BufferGeometry();
   const steps = 5;
   const width = 1;
   const stepHeight = 0.2;
   const stepDepth = 0.3;
 
-  const geometry = new THREE.BufferGeometry();
   const vertices = [];
   const indices = [];
   const normals = [];
@@ -224,23 +220,66 @@ const ShapeControls = ({
   setShapes,
   onClick,
   isSelected,
-  enableRotation = false,
-  enableFloating = false,
+  selectedObject,
   mode = "translate",
+  animationStates = {},
 }) => {
   const meshRef = useRef();
   const transformRef = useRef();
-  const [offset, setOffset] = useState(Math.random() * Math.PI * 2);
+  const [offset] = useState(Math.random() * Math.PI * 2);
+  const initialPosition = shape.position;
+
+  useEffect(() => {
+    if (meshRef.current) {
+      meshRef.current.position.set(...shape.position);
+      meshRef.current.rotation.set(...shape.rotation);
+      meshRef.current.scale.set(shape.scale, shape.scale, shape.scale);
+    }
+  }, [shape]);
 
   useFrame(({ clock }) => {
-    if (meshRef.current) {
-      if (enableRotation) {
-        meshRef.current.rotation.y += 0.01;
-      }
-      if (enableFloating) {
-        meshRef.current.position.y =
-          shape.position[1] + Math.sin(clock.elapsedTime + offset) * 0.2;
-      }
+    if (!meshRef.current || !animationStates[shape.id]) return;
+
+    const animations = animationStates[shape.id];
+    const basePosition = Array.isArray(initialPosition)
+      ? initialPosition
+      : [0, 0, 0];
+    let newPosition = [...basePosition];
+    let newScale = shape.scale || 1;
+
+    // Handle rotating animation
+    if (animations?.rotating) {
+      meshRef.current.rotation.y += 0.02;
+    }
+
+    // Handle floating animation
+    if (animations?.floating) {
+      newPosition[1] =
+        basePosition[1] + Math.sin(clock.elapsedTime + offset) * 0.2;
+    }
+
+    // Handle scaling animation
+    if (animations?.scaling) {
+      newScale = shape.scale * (1 + Math.sin(clock.elapsedTime * 2) * 0.2);
+    }
+
+    // Handle pulsing animation
+    if (animations?.pulsing) {
+      newScale = shape.scale * (1 + Math.sin(clock.elapsedTime * 4) * 0.1);
+    }
+
+    // Handle bouncing animation
+    if (animations?.bouncing) {
+      newPosition[1] =
+        basePosition[1] + Math.abs(Math.sin(clock.elapsedTime * 3)) * 0.3;
+    }
+
+    // Apply position updates
+    meshRef.current.position.set(...newPosition);
+
+    // Apply scale updates (if changed)
+    if (newScale !== shape.scale) {
+      meshRef.current.scale.set(newScale, newScale, newScale);
     }
   });
 
@@ -250,14 +289,13 @@ const ShapeControls = ({
   // Load textures if applicable
   const texture = shape.texturePath ? useTexture(shape.texturePath) : null;
 
-  // Calculate final scale based on model's default scale and user-defined scale
+  // Calculate final scale
   const finalScale = isModelType
     ? shape.scale * (modelConfigs[shape.type]?.scale || 1)
     : shape.scale;
 
-  if (shape.isHidden) {
-    return null;
-  }
+  if (shape.isHidden) return null;
+
   return (
     <TransformControls
       ref={transformRef}
@@ -276,7 +314,7 @@ const ShapeControls = ({
         >
           {isModelType ? (
             <Model modelId={shape.type} isSelected={isSelected} />
-          ): shape.type === "importedModel" ? (
+          ) : shape.type === "importedModel" ? (
             <ImportedModel shape={shape} isSelected={isSelected} />
           ) : (
             <>
@@ -332,7 +370,6 @@ const ShapeControls = ({
               {shape.type === "wall" && (
                 <primitive object={createWallGeometry()} />
               )}
-              
 
               <meshStandardMaterial
                 color={isSelected ? "yellow" : shape.color}
@@ -343,9 +380,7 @@ const ShapeControls = ({
                 opacity={isSelected ? 0.5 : 1}
               />
             </>
-
           )}
-
         </mesh>
       </Suspense>
     </TransformControls>
