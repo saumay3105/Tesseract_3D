@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import Sidebar from "../Sidebar";
 import SceneRenderer from "../SceneRenderer";
-import Toolbar from "../Toolbar";
 import useKeyboardShortcuts from "../../hooks/useKeyboardShortcuts";
 import ObjectProperties from "../ObjectProperties";
 import useAnimationControls from "../../hooks/useAnimationControls";
@@ -281,11 +280,12 @@ const Playground = () => {
           animationData={animationData}
           animationStates={animationStates}
         />
-        <Toolbar undo={undo} unselect={unselect} />
         <ObjectProperties
           selectedObject={selectedObject}
           updateObject={updateObject}
           deleteShape={deleteShape}
+          undo={undo}
+          unselect={unselect}
         />
       </div>
     </div>

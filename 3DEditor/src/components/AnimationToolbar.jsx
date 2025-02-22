@@ -33,22 +33,22 @@ const AnimationToolbar = ({ appliedAnimations, onApply, onDelete }) => {
 
       <div>
         <h4 className="text-sm font-semibold mb-2">Active Animations:</h4>
-        <div className="space-y-2">
-          {appliedAnimations.length > 0 ? (
-            appliedAnimations.map((anim) => (
+        {appliedAnimations.length > 0 ? (
+          <div className="grid grid-cols-2 gap-2">
+            {appliedAnimations.map((anim) => (
               <button
                 key={anim}
-                className="bg-red-500 hover:bg-red-700 text-white px-3 py-2 rounded w-full text-sm flex items-center justify-between"
+                className="bg-red-500 hover:bg-red-700 text-white px-3 py-2 rounded text-sm flex items-center justify-between"
                 onClick={() => onDelete(anim)}
               >
                 <span>{anim.charAt(0).toUpperCase() + anim.slice(1)}</span>
                 <span>✖</span>
               </button>
-            ))
-          ) : (
-            <p className="text-gray-400 text-xs">No animations applied.</p>
-          )}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-gray-400 text-xs">No animations applied.</p>
+        )}
       </div>
     </div>
   );

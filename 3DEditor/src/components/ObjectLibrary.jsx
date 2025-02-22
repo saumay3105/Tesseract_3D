@@ -58,35 +58,34 @@ const ObjectLibrary = ({ addShape }) => {
   };
 
   return (
-   
-        <div className="mt-2 bg-gray-900 rounded p-2 max-h-96 ">
-          {Object.entries(shapes).map(([category, items]) => (
-            <div key={category} className="mb-4">
-              <h3 className="text-sm font-semibold capitalize mb-2 text-white 400">
-                {category}
-              </h3>
-              <div className="grid grid-cols-3 gap-2">
-                {items.map((shape) => (
-                  <button
-                    key={shape.id}
-                    onClick={() => addShape(shape.id)}
-                    className="flex flex-col items-center justify-center p-2 bg-gray-700 hover:bg-gray-600 rounded transition-colors duration-200"
-                  >
-                    <span className="text-2xl mb-1">{shape.icon}</span>
-                    <div className="relative group w-full">
-                      <span className="text-xs truncate max-w-[80px] block">
-                        {shape.name}
-                      </span>
-                      <div className="absolute left-1/2 -translate-x-1/2 -top-6 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition whitespace-nowrap">
-                        {shape.name}
-                      </div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          ))}
+    <div className="mt-2 bg-gray-900 rounded max-h-96 ">
+      {Object.entries(shapes).map(([category, items]) => (
+        <div key={category} className="mb-4">
+          <h3 className="text-sm font-semibold capitalize mb-2 text-white 400">
+            {category}
+          </h3>
+          <div className="grid grid-cols-3 gap-2">
+            {items.map((shape) => (
+              <button
+                key={shape.id}
+                onClick={() => addShape(shape.id)}
+                className="flex flex-col items-center justify-center p-2 bg-gray-700 hover:bg-gray-600 rounded transition-colors duration-200"
+              >
+                <span className="text-2xl mb-1">{shape.icon}</span>
+                <div className="relative group w-full">
+                  <span className="text-xs truncate max-w-[80px] block">
+                    {shape.name}
+                  </span>
+                  <div className="absolute left-1/2 -translate-x-1/2 -top-6 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition whitespace-nowrap">
+                    {shape.name}
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
         </div>
+      ))}
+    </div>
   );
 };
 

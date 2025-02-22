@@ -28,7 +28,7 @@ const SceneRenderer = ({
   }, [selectedObject, animationData]);
 
   return (
-    <div className="w-4/5 h-screen flex flex-col" style={{ background }}>
+    <div className="w-[78vw] h-screen flex flex-col" style={{ background }}>
       <Canvas camera={{ position: [5, 5, 5], fov: 50 }}>
         <ambientLight intensity={0.5} />
         <directionalLight position={[5, 5, 5]} />
