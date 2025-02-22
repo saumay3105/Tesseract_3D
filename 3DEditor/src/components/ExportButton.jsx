@@ -1,5 +1,6 @@
 import { geometryDefinitions } from "./geometryDefinition";
 import modelConfigs from "./modelConfigs.json";
+import { useFrame } from "@react-three/fiber";
 
 // Function to analyze which geometries and models are used
 const analyzeShapeUsage = (shapes) => {
@@ -32,6 +33,7 @@ const generateImports = (usedGeometries, basicShapes) => {
   import { useTexture } from "@react-three/drei";
   import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
   import { useLoader } from "@react-three/fiber";
+  import { useFrame } from "@react-three/fiber";
   import * as THREE from 'three';`;
 };
 
@@ -92,8 +94,6 @@ const generateModelComponent = (usedModels) => {
         }
       });
       
-      scene.position.set(...position);
-      scene.rotation.set(...rotation);
       scene.scale.set(scale * defaultScale, scale * defaultScale, scale * defaultScale);
       
       return <primitive object={scene} />;
@@ -117,10 +117,7 @@ const generateImportedModelComponent = (usedImportedModels) => {
           const geometry = useLoader(STLLoader, shape.modelUrl);
           return (
             <mesh geometry={geometry}>
-              <meshStandardMaterial
-                color={shape.color}
-                opacity={1}
-              />
+              <meshStandardMaterial color={shape.color} />
             </mesh>
           );
         default:
@@ -133,6 +130,40 @@ const generateImportedModelComponent = (usedImportedModels) => {
   };`;
 };
 
+const getAnimationUseFrame = () => {
+  return `useFrame(({ clock }) => {
+    if (!meshRef.current || !animationStates[shape.id]) return;
+
+    const animations = animationStates[shape.id];
+    const basePosition = Array.isArray(initialPosition)
+      ? initialPosition
+      : [0, 0, 0];
+    let newPosition = [...basePosition];
+    let newScale = shape.scale || 1;
+    if (animations?.rotating) {
+      meshRef.current.rotation.y += 0.02;
+    }
+    if (animations?.floating) {
+      newPosition[1] =
+        basePosition[1] + Math.sin(clock.elapsedTime + offset) * 0.2;
+    }
+    if (animations?.scaling) {
+      newScale = shape.scale * (1 + Math.sin(clock.elapsedTime * 2) * 0.2);
+    }
+    if (animations?.pulsing) {
+      newScale = shape.scale * (1 + Math.sin(clock.elapsedTime * 4) * 0.1);
+    }
+    if (animations?.bouncing) {
+      newPosition[1] =
+        basePosition[1] + Math.abs(Math.sin(clock.elapsedTime * 3)) * 0.3;
+    }
+    meshRef.current.position.set(...newPosition);
+    if (newScale !== shape.scale) {
+      meshRef.current.scale.set(newScale, newScale, newScale);
+    }
+  });`;
+};
+
 // Helper function to generate JSX for each shape
 const generateShapeJSX = (shape) => {
   const { position, rotation, scale, color, type, texturePath } = shape;
@@ -142,28 +173,32 @@ const generateShapeJSX = (shape) => {
   const isModelType = modelConfigs[type];
   const texture = texturePath ? `useTexture('${texturePath}')` : "null";
 
+  let jsx = `<mesh position={${pos}} rotation={${rot}} scale={[${scale}, ${scale}, ${scale}]}>`;
+
   if (shape.type === "importedModel") {
     return `<ImportedModel shape={${JSON.stringify(shape)}} />`;
   }
 
   if (isModelType) {
-    return `<Model modelPath="${modelConfigs[type].path}" position={${pos}} rotation={${rot}} scale={${scale}} defaultScale={${modelConfigs[type].scale}} />`;
+    return `${jsx} <Model modelPath="${modelConfigs[type].path}" position={${pos}} rotation={${rot}} scale={${scale}} defaultScale={${modelConfigs[type].scale}} /></mesh>`;
   }
 
   if (geometryDefinitions[type]) {
-    return `<CustomGeometry
+    return `${jsx}
+            <CustomGeometry
                 type="${type}"
                 position={${pos}}
                 rotation={${rot}}
                 scale={[${scale}, ${scale}, ${scale}]}>
                 <meshStandardMaterial color="${color}" />
-              </CustomGeometry>`;
+              </CustomGeometry>
+              </mesh>`;
   }
 
-  return `<mesh position={${pos}} rotation={${rot}} scale={[${scale}, ${scale}, ${scale}]}>
-              <${type}Geometry />
-              <meshStandardMaterial color="${color}" map={${texture}} />
-            </mesh>`;
+  return `${jsx}
+            <${type}Geometry />
+            <meshStandardMaterial color="${color}" map={${texture}} />
+          </mesh>`;
 };
 
 // Main export function
