@@ -1,9 +1,7 @@
 import { useState, useEffect } from "react";
 import DraggableInput from "./DraggableInput";
-import { ExportButton } from "./ExportButton";
 
 const ObjectProperties = ({
-  shapes,
   selectedObject,
   updateObject,
   deleteShape,
@@ -33,9 +31,9 @@ const ObjectProperties = ({
     }
   }, [selectedObject]);
 
-  const handlePositionChange = (axis, value) => {
+  const handlePositionChange = (axis, e) => {
     if (!updateObject || !selectedObject) return;
-    const newPosition = { ...position, [axis]: parseFloat(value) };
+    const newPosition = { ...position, [axis]: parseFloat(e) };
     setPosition(newPosition);
     updateObject({
       position: [newPosition.x, newPosition.y, newPosition.z],
@@ -54,10 +52,7 @@ const ObjectProperties = ({
         axis === "y"
           ? degrees * (Math.PI / 180)
           : selectedObject.rotation[1] || 0,
-        
-        axis === "z"
-          ? degrees * (Math.PI / 180)
-          : selectedObject.rotation[2] || 0,
+        selectedObject.rotation[2] || 0,
       ],
     });
   };
@@ -69,6 +64,7 @@ const ObjectProperties = ({
     updateObject({ scale: newScale });
   };
 
+  if (!selectedObject) return null;
 
   return (
     <div className="absolute top-5 right-2 bg-gray-800 p-4 rounded-lg shadow-lg text-white w-64">
@@ -78,71 +74,70 @@ const ObjectProperties = ({
       >
         Undo
       </button>
-      <ExportButton shapes={shapes} />
+      <h3 className="text-sm font-semibold mb-4">Modify Object:</h3>
 
-      {selectedObject && (
-        <div>
-          <h3 className="text-sm font-semibold mb-4">Modify Object:</h3>
+      <div className="flex items-center gap-2 mb-4">
+        <label className="text-xs">Color:</label>
+        <input
+          type="color"
+          value={selectedObject.color || "#ffffff"}
+          onChange={(e) => updateObject?.({ color: e.target.value })}
+        />
+      </div>
 
-          <div className="flex items-center gap-2 mb-4">
-            <label className="text-xs">Color:</label>
-            <input
-              type="color"
-              value={selectedObject.color || "#ffffff"}
-              onChange={(e) => updateObject?.({ color: e.target.value })}
-            />
-          </div>
+      <div className="flex flex-col gap-2 mb-4">
+        <label className="text-xs">Scale:</label>
+        <DraggableInput defaultValue={scale} onChange={handleScaleChange} />
+      </div>
 
-          <div className="flex flex-col gap-2 mb-4">
-            <label className="text-xs">Scale:</label>
-            <DraggableInput defaultValue={scale} onChange={handleScaleChange} />
-          </div>
-
-          <div className="flex flex-col gap-2 mt-2 w-full">
-            <label className="text-xs">Position:</label>
-            <div className="flex flex-col gap-2">
-              {["x", "y", "z"].map((axis) => (
-                <div key={axis} className="flex flex-col gap-1">
-                  <label className="text-xs text-gray-400">
-                    {axis.toUpperCase()}
-                  </label>
-                  <DraggableInput
-                    defaultValue={position[axis]}
-                    onChange={(value) => handlePositionChange(axis, value)}
-                  />
-                </div>
-              ))}
+      <div className="flex flex-col gap-2 mt-2 w-full">
+        <label className="text-xs">Position:</label>
+        <div className="flex flex-col gap-2">
+          {["x", "y", "z"].map((axis) => (
+            <div key={axis} className="flex flex-col gap-1">
+              <label className="text-xs text-gray-400">
+                {axis.toUpperCase()}
+              </label>
+              <input
+                type="range"
+                min="-5"
+                max="5"
+                step="0.1"
+                value={position[axis]}
+                onChange={(e) => handlePositionChange(axis, e.target.value)}
+                className="w-full"
+              />
             </div>
-          </div>
-
-          <div className="flex flex-col gap-2 mb-4">
-            <label className="text-xs">Rotation:</label>
-            <div className="flex flex-col gap-4">
-              {["x", "y", "z"].map((axis) => (
-                <div key={axis} className="flex flex-col gap-1">
-                  <label className="text-xs">{axis.toUpperCase()}-axis:</label>
-                  <input
-                    type="range"
-                    min="0"
-                    max="360"
-                    step="1"
-                    value={rotation[axis]}
-                    onChange={(e) => handleRotationChange(axis, e.target.value)}
-                    className="w-full"
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <button
-            className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded w-full"
-            onClick={() => deleteShape?.()}
-          >
-            Delete
-          </button>
+          ))}
         </div>
-      )}
+      </div>
+
+      <div className="flex flex-col gap-2 mb-4">
+        <label className="text-xs">Rotation:</label>
+        <div className="flex flex-col gap-4">
+          {["x", "y", "z"].map((axis) => (
+            <div key={axis} className="flex flex-col gap-1">
+              <label className="text-xs">{axis.toUpperCase()}-axis:</label>
+              <input
+                type="range"
+                min="0"
+                max="360"
+                step="1"
+                value={rotation[axis]}
+                onChange={(e) => handleRotationChange(axis, e.target.value)}
+                className="w-full"
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <button
+        className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded w-full"
+        onClick={() => deleteShape?.()}
+      >
+        Delete
+      </button>
     </div>
   );
 };
