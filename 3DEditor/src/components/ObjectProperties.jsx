@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
 import DraggableInput from "./DraggableInput";
+import { ExportButton } from "./ExportButton";
 
 const ObjectProperties = ({
+  shapes,
   selectedObject,
   updateObject,
   deleteShape,
@@ -77,6 +79,7 @@ const ObjectProperties = ({
       >
         Undo
       </button>
+      <ExportButton shapes={shapes} />
       <h3 className="text-sm font-semibold mb-4">Modify Object:</h3>
 
       <div className="flex items-center gap-2 mb-4">
