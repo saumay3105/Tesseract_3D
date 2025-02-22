@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import DraggableInput from "./DraggableInput";
 
 const ObjectProperties = ({ selectedObject, updateObject, deleteShape }) => {
   const [position, setPosition] = useState({ x: 0, y: 0, z: 0 });
@@ -50,9 +51,9 @@ const ObjectProperties = ({ selectedObject, updateObject, deleteShape }) => {
     });
   };
 
-  const handleScaleChange = (e) => {
+  const handleScaleChange = (value) => {
     if (!updateObject) return;
-    const newScale = parseFloat(e.target.value);
+    const newScale = parseFloat(value);
     setScale(newScale);
     updateObject({ scale: newScale });
   };
@@ -74,51 +75,44 @@ const ObjectProperties = ({ selectedObject, updateObject, deleteShape }) => {
 
       <div className="flex flex-col gap-2 mb-4">
         <label className="text-xs">Scale:</label>
-        <input
-          type="range"
-          min="0.5"
-          max="3"
-          step="0.1"
-          value={scale}
-          onChange={handleScaleChange}
-          className="w-full"
-        />
+        <DraggableInput defaultValue={scale} onChange={handleScaleChange} />
       </div>
 
-      <div className="flex flex-col gap-2 mb-4">
+      <div className="flex flex-col gap-2 mt-2 w-full">
         <label className="text-xs">Position:</label>
-        {["x", "y", "z"].map((axis) => (
-          <div key={axis} className="flex flex-col gap-1">
-            <label className="text-xs">{axis.toUpperCase()}:</label>
-            <input
-              type="range"
-              min="-5"
-              max="5"
-              step="0.1"
-              value={position[axis]}
-              onChange={(e) => handlePositionChange(axis, e.target.value)}
-              className="w-full"
-            />
-          </div>
-        ))}
+        <div className="grid grid-cols-3 gap-2">
+          {["x", "y", "z"].map((axis) => (
+            <div key={axis} className="flex flex-col gap-1">
+              <label className="text-xs text-gray-400">
+                {axis.toUpperCase()}
+              </label>
+              <DraggableInput
+                defaultValue={position[axis]}
+                onChange={(value) => handlePositionChange(axis, value)}
+              />
+            </div>
+          ))}
+        </div>
       </div>
 
       <div className="flex flex-col gap-2 mb-4">
         <label className="text-xs">Rotation:</label>
-        {["x", "y"].map((axis) => (
-          <div key={axis} className="flex flex-col gap-1">
-            <label className="text-xs">{axis.toUpperCase()}-axis:</label>
-            <input
-              type="range"
-              min="0"
-              max="360"
-              step="1"
-              value={rotation[axis]}
-              onChange={(e) => handleRotationChange(axis, e.target.value)}
-              className="w-full"
-            />
-          </div>
-        ))}
+        <div className="flex flex-col gap-4">
+          {["x", "y", "z"].map((axis) => (
+            <div key={axis} className="flex flex-col gap-1">
+              <label className="text-xs">{axis.toUpperCase()}-axis:</label>
+              <input
+                type="range"
+                min="0"
+                max="360"
+                step="1"
+                value={rotation[axis]}
+                onChange={(e) => handleRotationChange(axis, e.target.value)}
+                className="w-full"
+              />
+            </div>
+          ))}
+        </div>
       </div>
 
       <button
