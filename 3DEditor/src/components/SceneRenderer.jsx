@@ -1,7 +1,10 @@
+import { useEffect } from "react";
 import { Canvas } from "@react-three/fiber";
 import { GizmoHelper, OrbitControls, GizmoViewport } from "@react-three/drei";
 import { useState } from "react";
 import ShapeControls from "./ShapeControls";
+import Timeline from "./Timeline";
+
 import Grid from "./Grid";
 import AnimationToolbar from "./AnimationToolbar";
 import useAnimationControls from "../hooks/useAnimationControls";
@@ -13,6 +16,13 @@ const SceneRenderer = ({
   setSelectedObject,
   background,
   isRotationEnabled,
+  updateObject,
+  currentFrame,
+  setCurrentFrame,
+  playAnimation,
+  stopAnimation,
+  animationData,
+  interpolateFrames,
 }) => {
   const {
     animationStates,
@@ -20,6 +30,7 @@ const SceneRenderer = ({
     removeAnimation,
     getShapeAnimations,
   } = useAnimationControls();
+  const [keyframes, setKeyframes] = useState({});
 
   const handleApplyAnimation = (animation) => {
     if (selectedObject) {
@@ -35,8 +46,12 @@ const SceneRenderer = ({
     }
   };
 
+  useEffect(() => {
+    setKeyframes(animationData[selectedObject?.id] || {});
+  }, [selectedObject, animationData]);
+
   return (
-    <div className="w-4/5 h-screen relative" style={{ background }}>
+    <div className="w-4/5 h-screen flex flex-col" style={{ background }}>
       <Canvas camera={{ position: [5, 5, 5], fov: 50 }}>
         <ambientLight intensity={0.5} />
         <directionalLight position={[5, 5, 5]} />
@@ -48,12 +63,15 @@ const SceneRenderer = ({
             key={shape.id}
             shape={shape}
             setShapes={setShapes}
+            updateObject={updateObject}
             onClick={() =>
               setSelectedObject(shapes.find((s) => s.id === shape.id))
             }
             isSelected={selectedObject?.id === shape.id}
             selectedObject={selectedObject}
             animationStates={animationStates}
+            shapeAnimationData={animationData[shape.id]}
+            currentFrame={currentFrame}
           />
         ))}
 
@@ -72,6 +90,14 @@ const SceneRenderer = ({
           onDelete={handleDeleteAnimation}
         />
       )}
+
+      <Timeline
+        currentFrame={currentFrame}
+        setCurrentFrame={setCurrentFrame}
+        playAnimation={playAnimation}
+        stopAnimation={stopAnimation}
+        keyframes={keyframes}
+      />
     </div>
   );
 };

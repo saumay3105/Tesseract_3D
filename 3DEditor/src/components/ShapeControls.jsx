@@ -11,9 +11,19 @@ import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import { STLLoader } from "three/examples/jsm/loaders/STLLoader";
 import { useLoader } from "@react-three/fiber";
-import * as THREE from "three";
+
+import {
+  createPrismGeometry,
+  createCapsuleGeometry,
+  createTubeGeometry,
+  createArchGeometry,
+  createStairsGeometry,
+  createWallGeometry,
+  createPyramidGeometry,
+} from "./geometries";
 
 import modelConfigs from "./modelConfigs.json";
+import * as THREE from "three";
 
 // Model component for handling GLB models
 const Model = ({ modelId, isSelected }) => {
@@ -39,148 +49,6 @@ const Model = ({ modelId, isSelected }) => {
 
   scene.scale.set(defaultScale, defaultScale, defaultScale);
   return <primitive object={scene} />;
-};
-
-// Custom geometry functions remain the same
-const createPrismGeometry = () => {
-  return new THREE.CylinderGeometry(1, 1, 1, 6);
-};
-
-const createCapsuleGeometry = () => {
-  return new THREE.CapsuleGeometry(0.5, 1, 4, 8);
-};
-
-const createTubeGeometry = () => {
-  const path = new THREE.CatmullRomCurve3([
-    new THREE.Vector3(-1, 0, 0),
-    new THREE.Vector3(0, 1, 0),
-    new THREE.Vector3(1, 0, 0),
-  ]);
-  return new THREE.TubeGeometry(path, 20, 0.2, 8, false);
-};
-
-const createArchGeometry = () => {
-  const shape = new THREE.Shape();
-  shape.moveTo(-1, 0);
-  shape.lineTo(1, 0);
-  shape.lineTo(1, 1.5);
-  shape.absarc(0, 1.5, 1, 0, Math.PI, false);
-  shape.lineTo(-1, 1.5);
-  shape.lineTo(-1, 0);
-
-  return new THREE.ExtrudeGeometry(shape, {
-    steps: 1,
-    depth: 0.3,
-    bevelEnabled: false,
-  });
-};
-
-const createStairsGeometry = () => {
-  const geometry = new THREE.BufferGeometry();
-  const steps = 5;
-  const width = 1;
-  const stepHeight = 0.2;
-  const stepDepth = 0.3;
-
-  const vertices = [];
-  const indices = [];
-  const normals = [];
-  const uvs = [];
-
-  for (let i = 0; i < steps; i++) {
-    const y = i * stepHeight;
-    const z = -i * stepDepth;
-
-    vertices.push(
-      -width / 2,
-      y,
-      z,
-      width / 2,
-      y,
-      z,
-      width / 2,
-      y + stepHeight,
-      z,
-      -width / 2,
-      y + stepHeight,
-      z,
-      -width / 2,
-      y + stepHeight,
-      z,
-      width / 2,
-      y + stepHeight,
-      z,
-      width / 2,
-      y + stepHeight,
-      z - stepDepth,
-      -width / 2,
-      y + stepHeight,
-      z - stepDepth
-    );
-
-    const baseIndex = i * 8;
-    indices.push(
-      baseIndex,
-      baseIndex + 1,
-      baseIndex + 2,
-      baseIndex,
-      baseIndex + 2,
-      baseIndex + 3,
-      baseIndex + 4,
-      baseIndex + 5,
-      baseIndex + 6,
-      baseIndex + 4,
-      baseIndex + 6,
-      baseIndex + 7
-    );
-
-    normals.push(
-      0,
-      0,
-      1,
-      0,
-      0,
-      1,
-      0,
-      0,
-      1,
-      0,
-      0,
-      1,
-      0,
-      1,
-      0,
-      0,
-      1,
-      0,
-      0,
-      1,
-      0,
-      0,
-      1,
-      0
-    );
-
-    uvs.push(0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1);
-  }
-
-  geometry.setAttribute(
-    "position",
-    new THREE.Float32BufferAttribute(vertices, 3)
-  );
-  geometry.setAttribute("normal", new THREE.Float32BufferAttribute(normals, 3));
-  geometry.setAttribute("uv", new THREE.Float32BufferAttribute(uvs, 2));
-  geometry.setIndex(indices);
-
-  return geometry;
-};
-
-const createWallGeometry = () => {
-  return new THREE.BoxGeometry(2, 1, 0.2);
-};
-
-const createPyramidGeometry = () => {
-  return new THREE.ConeGeometry(1, 1.5, 4);
 };
 
 const ImportedModel = ({ shape, isSelected }) => {
@@ -221,8 +89,13 @@ const ShapeControls = ({
   onClick,
   isSelected,
   selectedObject,
+  updateObject,
+  enableRotation = false,
+  enableFloating = false,
   mode = "translate",
   animationStates = {},
+  shapeAnimationData,
+  currentFrame,
 }) => {
   const meshRef = useRef();
   const transformRef = useRef();
@@ -233,6 +106,7 @@ const ShapeControls = ({
     if (meshRef.current) {
       meshRef.current.position.set(...shape.position);
       meshRef.current.rotation.set(...shape.rotation);
+      meshRef.current.scale.set(shape.scale, shape.scale, shape.scale);
     }
   }, [shape]);
 
@@ -282,6 +156,63 @@ const ShapeControls = ({
     }
   });
 
+  // Helper function to perform linear interpolation between two values
+  const lerp = (start, end, t) => {
+    if (Array.isArray(start)) {
+      return start.map((s, i) => s + (end[i] - s) * t);
+    }
+    return start + (end - start) * t;
+  };
+
+  // Find the nearest keyframes before and after the current frame
+  const findNearestKeyframes = (frameData, currentFrame) => {
+    if (!frameData) return { before: null, after: null };
+
+    const frames = Object.keys(frameData)
+      .map(Number)
+      .sort((a, b) => a - b);
+
+    const beforeFrame = frames.reduce((prev, frame) => {
+      if (frame <= currentFrame && frame > prev) return frame;
+      return prev;
+    }, -Infinity);
+
+    const afterFrame = frames.reduce((prev, frame) => {
+      if (frame > currentFrame && (prev === Infinity || frame < prev))
+        return frame;
+      return prev;
+    }, Infinity);
+
+    return {
+      before: beforeFrame === -Infinity ? null : beforeFrame,
+      after: afterFrame === Infinity ? null : afterFrame,
+    };
+  };
+
+  // Get interpolated values for the current frame
+  const getInterpolatedValues = (frameData, currentFrame) => {
+    if (!frameData) return null;
+
+    const { before, after } = findNearestKeyframes(frameData, currentFrame);
+
+    // If no keyframes found, return null
+    if (before === null && after === null) return null;
+
+    // If only before keyframe exists, return its values
+    if (after === null) return frameData[before];
+
+    // If only after keyframe exists, return its values
+    if (before === null) return frameData[after];
+
+    // Calculate interpolation factor
+    const t = (currentFrame - before) / (after - before);
+
+    // Interpolate between the two keyframes
+    return {
+      position: lerp(frameData[before].position, frameData[after].position, t),
+    };
+  };
+
   // Check if shape is a model type
   const isModelType = Object.keys(modelConfigs).includes(shape.type);
 
@@ -305,7 +236,9 @@ const ShapeControls = ({
       <Suspense fallback={null}>
         <mesh
           ref={meshRef}
-          position={shape.position}
+          position={
+            getInterpolatedValues(shapeAnimationData, currentFrame)?.position
+          }
           scale={[finalScale, finalScale, finalScale]}
           rotation={shape.rotation}
           onClick={onClick}

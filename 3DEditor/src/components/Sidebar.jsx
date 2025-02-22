@@ -86,7 +86,7 @@ const Sidebar = ({
       </div>
 
       <ObjectLibrary addShape={addShape} />
-      <ModelImporter addShape={addShape}/>
+      <ModelImporter addShape={addShape} />
 
       <SceneObjects
         shapes={shapes}

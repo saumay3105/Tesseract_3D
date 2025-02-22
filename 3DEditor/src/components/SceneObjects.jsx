@@ -6,9 +6,6 @@ const SceneObjects = ({
   selectedObject,
   setSelectedObject,
 }) => {
-  // Add console.log to debug shapes data
-  console.log("Current shapes:", shapes);
-
   const toggleVisibility = (id, event) => {
     event.stopPropagation();
     if (!shapes || !setShapes) return;
