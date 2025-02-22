@@ -54,20 +54,14 @@ const DraggableInput = ({
   };
 
   return (
-    <input
-      type="text"
-      value={value}
-      onChange={handleInputChange}
-      onMouseDown={handleMouseDown}
-      className={`w-24 h-10 text-black text-sm font-medium border rounded
-        cursor-col-resize select-none focus:outline-none focus:ring-2 
-        focus:ring-blue-500 hover:bg-gray-50 transition-colors
-        flex items-center text-center leading-none
-        ${className} ${
-        isDragging ? "bg-gray-100 border-gray-400" : "border-gray-300"
-      }`}
-      style={{ lineHeight: "40px" }}
-    />
+    <div className="relative flex items-center">
+      <input
+        value={value}
+        onChange={handleInputChange}
+        className={`w-full px-2 py-1 bg-gray-700 cursor-col-resize  rounded text-white text-sm ${className}`}
+        onMouseDown={handleMouseDown}
+      />
+    </div>
   );
 };
 
