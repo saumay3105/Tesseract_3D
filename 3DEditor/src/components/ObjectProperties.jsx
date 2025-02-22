@@ -80,7 +80,7 @@ const ObjectProperties = ({ selectedObject, updateObject, deleteShape }) => {
 
       <div className="flex flex-col gap-2 mt-2 w-full">
         <label className="text-xs">Position:</label>
-        <div className="grid grid-cols-3 gap-2">
+        <div className="flex flex-col gap-2">
           {["x", "y", "z"].map((axis) => (
             <div key={axis} className="flex flex-col gap-1">
               <label className="text-xs text-gray-400">
