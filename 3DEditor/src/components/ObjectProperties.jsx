@@ -67,7 +67,6 @@ const ObjectProperties = ({
     updateObject({ scale: newScale });
   };
 
-  if (!selectedObject) return null;
 
   return (
     <div className="absolute top-5 right-2 bg-gray-800 p-4 rounded-lg shadow-lg text-white w-64">
@@ -77,65 +76,70 @@ const ObjectProperties = ({
       >
         Undo
       </button>
-      <h3 className="text-sm font-semibold mb-4">Modify Object:</h3>
 
-      <div className="flex items-center gap-2 mb-4">
-        <label className="text-xs">Color:</label>
-        <input
-          type="color"
-          value={selectedObject.color || "#ffffff"}
-          onChange={(e) => updateObject?.({ color: e.target.value })}
-        />
-      </div>
+      {selectedObject && (
+        <div>
+          <h3 className="text-sm font-semibold mb-4">Modify Object:</h3>
 
-      <div className="flex flex-col gap-2 mb-4">
-        <label className="text-xs">Scale:</label>
-        <DraggableInput defaultValue={scale} onChange={handleScaleChange} />
-      </div>
+          <div className="flex items-center gap-2 mb-4">
+            <label className="text-xs">Color:</label>
+            <input
+              type="color"
+              value={selectedObject.color || "#ffffff"}
+              onChange={(e) => updateObject?.({ color: e.target.value })}
+            />
+          </div>
 
-      <div className="flex flex-col gap-2 mt-2 w-full">
-        <label className="text-xs">Position:</label>
-        <div className="flex flex-col gap-2">
-          {["x", "y", "z"].map((axis) => (
-            <div key={axis} className="flex flex-col gap-1">
-              <label className="text-xs text-gray-400">
-                {axis.toUpperCase()}
-              </label>
-              <DraggableInput
-                defaultValue={position[axis]}
-                onChange={(value) => handlePositionChange(axis, value)}
-              />
+          <div className="flex flex-col gap-2 mb-4">
+            <label className="text-xs">Scale:</label>
+            <DraggableInput defaultValue={scale} onChange={handleScaleChange} />
+          </div>
+
+          <div className="flex flex-col gap-2 mt-2 w-full">
+            <label className="text-xs">Position:</label>
+            <div className="flex flex-col gap-2">
+              {["x", "y", "z"].map((axis) => (
+                <div key={axis} className="flex flex-col gap-1">
+                  <label className="text-xs text-gray-400">
+                    {axis.toUpperCase()}
+                  </label>
+                  <DraggableInput
+                    defaultValue={position[axis]}
+                    onChange={(value) => handlePositionChange(axis, value)}
+                  />
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-      </div>
+          </div>
 
-      <div className="flex flex-col gap-2 mb-4">
-        <label className="text-xs">Rotation:</label>
-        <div className="flex flex-col gap-4">
-          {["x", "y", "z"].map((axis) => (
-            <div key={axis} className="flex flex-col gap-1">
-              <label className="text-xs">{axis.toUpperCase()}-axis:</label>
-              <input
-                type="range"
-                min="0"
-                max="360"
-                step="1"
-                value={rotation[axis]}
-                onChange={(e) => handleRotationChange(axis, e.target.value)}
-                className="w-full"
-              />
+          <div className="flex flex-col gap-2 mb-4">
+            <label className="text-xs">Rotation:</label>
+            <div className="flex flex-col gap-4">
+              {["x", "y", "z"].map((axis) => (
+                <div key={axis} className="flex flex-col gap-1">
+                  <label className="text-xs">{axis.toUpperCase()}-axis:</label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="360"
+                    step="1"
+                    value={rotation[axis]}
+                    onChange={(e) => handleRotationChange(axis, e.target.value)}
+                    className="w-full"
+                  />
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-      </div>
+          </div>
 
-      <button
-        className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded w-full"
-        onClick={() => deleteShape?.()}
-      >
-        Delete
-      </button>
+          <button
+            className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded w-full"
+            onClick={() => deleteShape?.()}
+          >
+            Delete
+          </button>
+        </div>
+      )}
     </div>
   );
 };
