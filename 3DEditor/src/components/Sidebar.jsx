@@ -1,9 +1,24 @@
-import { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Library, Import, Play } from "lucide-react";
 import ObjectLibrary from "./ObjectLibrary";
 import SceneObjects from "./SceneObjects";
 import ModelImporter from "./ModelImporter";
+import AnimationToolbar from "./AnimationToolbar";
+
+const TabButton = ({ active, onClick, children, icon: Icon }) => (
+  <button
+    onClick={onClick}
+    className={`flex items-center gap-2 w-full p-4 pl-0 text-xs font-medium transition-colors duration-200 border-l-4 ${
+      active
+        ? "bg-gray-800 border-blue-500 text-white"
+        : "border-transparent text-gray-400 hover:text-white hover:bg-gray-800"
+    }`}
+  >
+    <Icon size={18} />
+    {children}
+  </button>
+);
 
 const Sidebar = ({
   addShape,
@@ -14,157 +29,102 @@ const Sidebar = ({
   updateObject,
   deleteShape,
   setBackground,
+  animationStates,
+  toggleAnimation,
+  removeAnimation,
+  getShapeAnimations,
 }) => {
-  const [position, setPosition] = useState({ x: 0, y: 0, z: 0 });
-  const [rotation, setRotation] = useState({ x: 0, y: 0 });
-  const [scale, setScale] = useState(1);
-  const [animation, setAnimation] = useState("");
+  const [activeTab, setActiveTab] = useState("library");
 
-  useEffect(() => {
-    if (
-      selectedObject &&
-      Array.isArray(selectedObject.position) &&
-      Array.isArray(selectedObject.rotation)
-    ) {
-      setPosition({
-        x: selectedObject.position[0] || 0,
-        y: selectedObject.position[1] || 0,
-        z: selectedObject.position[2] || 0,
-      });
-      setRotation({
-        x: (selectedObject.rotation[0] || 0) * (180 / Math.PI),
-        y: (selectedObject.rotation[1] || 0) * (180 / Math.PI),
-      });
-      setScale(selectedObject.scale || 1);
-      setAnimation(selectedObject.animation || "");
+  const handleApplyAnimation = (animation) => {
+    if (selectedObject) {
+      const animationType = animation.toLowerCase();
+      toggleAnimation(selectedObject.id, animationType);
     }
-  }, [selectedObject]);
-
-  const handlePositionChange = (axis, value) => {
-    if (!updateObject || !selectedObject) return;
-    const newPosition = { ...position, [axis]: parseFloat(value) };
-    setPosition(newPosition);
-    updateObject({
-      position: [newPosition.x, newPosition.y, newPosition.z],
-    });
   };
 
-  const handleRotationChange = (axis, value) => {
-    if (!updateObject || !selectedObject?.rotation) return;
-    const degrees = parseFloat(value);
-    setRotation((prev) => ({ ...prev, [axis]: degrees }));
-    updateObject({
-      rotation: [
-        axis === "x"
-          ? degrees * (Math.PI / 180)
-          : selectedObject.rotation[0] || 0,
-        axis === "y"
-          ? degrees * (Math.PI / 180)
-          : selectedObject.rotation[1] || 0,
-        selectedObject.rotation[2] || 0,
-      ],
-    });
+  const handleDeleteAnimation = (animation) => {
+    if (selectedObject) {
+      const animationType = animation.toLowerCase();
+      removeAnimation(selectedObject.id, animationType);
+    }
   };
 
-  const handleScaleChange = (e) => {
-    if (!updateObject) return;
-    const newScale = parseFloat(e.target.value);
-    setScale(newScale);
-    updateObject({ scale: newScale });
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case "library":
+        return <ObjectLibrary addShape={addShape} />;
+      case "import":
+        return <ModelImporter addShape={addShape} />;
+      case "animations":
+        return selectedObject ? (
+          <AnimationToolbar
+            appliedAnimations={getShapeAnimations(selectedObject.id)}
+            onApply={handleApplyAnimation}
+            onDelete={handleDeleteAnimation}
+          />
+        ) : (
+          <div className="p-4 text-gray-400">
+            Select an object to apply animations
+          </div>
+        );
+      default:
+        return null;
+    }
   };
 
   return (
-    <div className="w-1/5 h-screen bg-gray-900 text-white p-4 flex flex-col gap-4 overflow-y-auto">
-      <div className="flex items-center justify-between">
-        <Link
-          to="/"
-          className="flex items-center gap-2 bg-blue-500 p-2 rounded hover:bg-blue-600"
+    <div className="w-1/5 h-screen bg-gray-900 text-white flex">
+      <div className="w-16 bg-gray-900 border-r border-none flex flex-col">
+        <div className="p-3 border-none">
+          <Link
+            to="/"
+            className="flex items-center justify-center bg-blue-500 p-2 rounded hover:bg-blue-600"
+          >
+            <ArrowLeft size={18} />
+          </Link>
+        </div>
+        <TabButton
+          active={activeTab === "library"}
+          onClick={() => setActiveTab("library")}
+          icon={Library}
         >
-          <ArrowLeft size={18} /> Home
-        </Link>
-        <h2 className="text-xl font-bold">Tesseract</h2>
+          Library
+        </TabButton>
+        <TabButton
+          active={activeTab === "import"}
+          onClick={() => setActiveTab("import")}
+          icon={Import}
+        >
+          Import
+        </TabButton>
+        <TabButton
+          active={activeTab === "animations"}
+          onClick={() => setActiveTab("animations")}
+          icon={Play}
+        >
+          Animate
+        </TabButton>
       </div>
 
-      <ObjectLibrary addShape={addShape} />
-      <ModelImporter addShape={addShape} />
+      <div className="flex-1 flex flex-col">
+        <div className="p-4 border-b border-none">
+          <h2 className="text-xl font-bold">Playground</h2>
+        </div>
 
-      <SceneObjects
-        shapes={shapes}
-        setShapes={setShapes}
-        selectedObject={selectedObject}
-        setSelectedObject={setSelectedObject}
-      />
+        <div className="flex-1 overflow-y-auto border-b border-gray-800">
+          {renderTabContent()}
+        </div>
 
-      {selectedObject && (
-        <>
-          <h3 className="mt-4 text-sm font-semibold">Modify Object:</h3>
-
-          <div className="flex items-center gap-2">
-            <label className="text-xs">Color:</label>
-            <input
-              type="color"
-              value={selectedObject.color || "#ffffff"}
-              onChange={(e) => updateObject?.({ color: e.target.value })}
-            />
-          </div>
-
-          <div className="flex flex-col gap-2 mt-2 w-full">
-            <label className="text-xs">Scale:</label>
-            <input
-              type="range"
-              min="0.5"
-              max="3"
-              step="0.1"
-              value={scale}
-              onChange={handleScaleChange}
-              className="w-full"
-            />
-          </div>
-
-          <div className="flex flex-col gap-2 mt-2 w-full">
-            <label className="text-xs">Position:</label>
-            {["x", "y", "z"].map((axis) => (
-              <div key={axis} className="flex flex-col gap-1 w-full">
-                <label className="text-xs">{axis.toUpperCase()}:</label>
-                <input
-                  type="range"
-                  min="-5"
-                  max="5"
-                  step="0.1"
-                  value={position[axis]}
-                  onChange={(e) => handlePositionChange(axis, e.target.value)}
-                  className="w-full"
-                />
-              </div>
-            ))}
-          </div>
-
-          <div className="flex flex-col gap-2 mt-2 w-full">
-            <label className="text-xs">Rotation:</label>
-            {["x", "y"].map((axis) => (
-              <div key={axis} className="flex flex-col gap-1 w-full">
-                <label className="text-xs">{axis.toUpperCase()}-axis:</label>
-                <input
-                  type="range"
-                  min="0"
-                  max="360"
-                  step="1"
-                  value={rotation[axis]}
-                  onChange={(e) => handleRotationChange(axis, e.target.value)}
-                  className="w-full"
-                />
-              </div>
-            ))}
-          </div>
-
-          <button
-            className="bg-red-500 p-2 mt-4 rounded hover:bg-red-600"
-            onClick={() => deleteShape?.()}
-          >
-            Delete
-          </button>
-        </>
-      )}
+        <div className="h-1/2 overflow-y-auto p-4">
+          <SceneObjects
+            shapes={shapes}
+            setShapes={setShapes}
+            selectedObject={selectedObject}
+            setSelectedObject={setSelectedObject}
+          />
+        </div>
+      </div>
     </div>
   );
 };

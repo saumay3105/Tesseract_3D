@@ -58,25 +58,11 @@ const ObjectLibrary = ({ addShape }) => {
   };
 
   return (
-    <div className="mt-4">
-      <button
-        onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full bg-gray-800 hover:bg-gray-700 p-2 rounded flex items-center justify-between"
-      >
-        <span className="font-semibold">3D Object Library</span>
-        <span
-          className="transform transition-transform duration-200"
-          style={{ transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)" }}
-        >
-          ▼
-        </span>
-      </button>
-
-      {isExpanded && (
-        <div className="mt-2 bg-gray-800 rounded p-2 max-h-96 overflow-y-auto">
+   
+        <div className="mt-2 bg-gray-900 rounded p-2 max-h-96 ">
           {Object.entries(shapes).map(([category, items]) => (
             <div key={category} className="mb-4">
-              <h3 className="text-sm font-semibold capitalize mb-2 text-gray-400">
+              <h3 className="text-sm font-semibold capitalize mb-2 text-white 400">
                 {category}
               </h3>
               <div className="grid grid-cols-3 gap-2">
@@ -87,7 +73,6 @@ const ObjectLibrary = ({ addShape }) => {
                     className="flex flex-col items-center justify-center p-2 bg-gray-700 hover:bg-gray-600 rounded transition-colors duration-200"
                   >
                     <span className="text-2xl mb-1">{shape.icon}</span>
-                    {/* Custom tooltip with truncated text */}
                     <div className="relative group w-full">
                       <span className="text-xs truncate max-w-[80px] block">
                         {shape.name}
@@ -102,8 +87,6 @@ const ObjectLibrary = ({ addShape }) => {
             </div>
           ))}
         </div>
-      )}
-    </div>
   );
 };
 
