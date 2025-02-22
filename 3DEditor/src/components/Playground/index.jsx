@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Sidebar from "../Sidebar";
 import SceneRenderer from "../SceneRenderer";
 import Toolbar from "../Toolbar";
@@ -64,6 +64,9 @@ const Playground = () => {
   const [selectedObject, setSelectedObject] = useState(null);
   const [background, setBackground] = useState("#111111");
   const [isRotationEnabled, setIsRotationEnabled] = useState(false);
+  const [currentFrame, setCurrentFrame] = useState(0);
+  const [animationData, setAnimationData] = useState({});
+  const [isAnimating, setIsAnimating] = useState(false);
 
   const findShapeIcon = (shapeType) => {
     for (const category of Object.values(shapeLibrary)) {
@@ -85,6 +88,17 @@ const Playground = () => {
         color: "#888888",
         scale: 1,
       };
+      // Initialize animation data for the new shape
+      setAnimationData((prev) => ({
+        ...prev,
+        [newShape.id]: {
+          0: {
+            position: [...newShape.position],
+            rotation: [...newShape.rotation],
+            scale: newShape.scale,
+          },
+        },
+      }));
       setHistory([...history, shapes]);
       setShapes([...shapes, newShape]);
     } else {
@@ -93,7 +107,29 @@ const Playground = () => {
       setShapes([...shapes, shapeData]);
     }
   };
+
   const updateObject = (updates) => {
+    if (!selectedObject) return;
+
+    // Update the current frame's animation data
+    setAnimationData((prev) => ({
+      ...prev,
+      [selectedObject.id]: {
+        ...prev[selectedObject.id],
+        [currentFrame]: {
+          position:
+            updates.position ||
+            prev[selectedObject.id]?.[currentFrame]?.position,
+          rotation:
+            updates.rotation ||
+            prev[selectedObject.id]?.[currentFrame]?.rotation,
+          scale:
+            updates.scale || prev[selectedObject.id]?.[currentFrame]?.scale,
+        },
+      },
+    }));
+
+    // Update the current shape state
     setShapes(
       shapes.map((shape) =>
         shape.id === selectedObject.id ? { ...shape, ...updates } : shape
@@ -106,9 +142,90 @@ const Playground = () => {
       if (selectedObject.modelUrl) {
         URL.revokeObjectURL(selectedObject.modelUrl);
       }
+      // Remove animation data for the deleted shape
+      setAnimationData((prev) => {
+        const newData = { ...prev };
+        delete newData[selectedObject.id];
+        return newData;
+      });
+
       setShapes(shapes.filter((shape) => shape.id !== selectedObject.id));
       setSelectedObject(null);
     }
+  };
+
+  const setFrame = (frameNumber) => {
+    setCurrentFrame(frameNumber);
+
+    // Update shapes to match the selected frame's state
+    const updatedShapes = shapes.map((shape) => {
+      const frameData = animationData[shape.id]?.[frameNumber];
+      if (!frameData) {
+        // If no keyframe data exists for this frame, find the nearest previous keyframe
+        const previousFrames = Object.keys(animationData[shape.id] || {})
+          .map(Number)
+          .filter((frame) => frame <= frameNumber)
+          .sort((a, b) => b - a);
+
+        const nearestFrame = previousFrames[0];
+        return nearestFrame
+          ? { ...shape, ...animationData[shape.id][nearestFrame] }
+          : shape;
+      }
+      return { ...shape, ...frameData };
+    });
+
+    setShapes(updatedShapes);
+  };
+
+  const interpolateFrames = (startFrame, endFrame) => {
+    const numFrames = endFrame - startFrame;
+    shapes.forEach((shape) => {
+      const startData = animationData[shape.id]?.[startFrame];
+      const endData = animationData[shape.id]?.[endFrame];
+
+      if (startData && endData) {
+        // Create interpolated frames
+        for (let frame = startFrame + 1; frame < endFrame; frame++) {
+          const progress = (frame - startFrame) / numFrames;
+
+          setAnimationData((prev) => ({
+            ...prev,
+            [shape.id]: {
+              ...prev[shape.id],
+              [frame]: {
+                position: startData.position.map(
+                  (start, i) => start + (endData.position[i] - start) * progress
+                ),
+                rotation: startData.rotation.map(
+                  (start, i) => start + (endData.rotation[i] - start) * progress
+                ),
+                scale:
+                  startData.scale +
+                  (endData.scale - startData.scale) * progress,
+              },
+            },
+          }));
+        }
+      }
+    });
+  };
+
+  const playAnimation = async (startFrame, endFrame, fps = 30) => {
+    setIsAnimating(true);
+    const frameTime = 1000 / fps;
+
+    for (let frame = startFrame; frame <= endFrame; frame++) {
+      if (!isAnimating) break;
+      setFrame(frame);
+      await new Promise((resolve) => setTimeout(resolve, frameTime));
+    }
+
+    setIsAnimating(false);
+  };
+
+  const stopAnimation = () => {
+    setIsAnimating(false);
   };
 
   const undo = () => {
@@ -128,9 +245,9 @@ const Playground = () => {
     <div className="flex flex-col h-screen">
       <div className="flex flex-1">
         <Sidebar
-          addShape={addShape}
           shapes={shapes}
           setShapes={setShapes}
+          addShape={addShape}
           selectedObject={selectedObject}
           setSelectedObject={setSelectedObject}
           updateObject={updateObject}
@@ -144,6 +261,13 @@ const Playground = () => {
           setSelectedObject={setSelectedObject}
           background={background}
           isRotationEnabled={isRotationEnabled}
+          currentFrame={currentFrame}
+          setCurrentFrame={setCurrentFrame}
+          updateObject={updateObject}
+          playAnimation={playAnimation}
+          interpolateFrames={interpolateFrames}
+          stopAnimation={stopAnimation}
+          animationData={animationData}
         />
         <Toolbar undo={undo} unselect={unselect} />
       </div>
