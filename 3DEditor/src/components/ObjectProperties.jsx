@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
 import DraggableInput from "./DraggableInput";
+import { ExportButton } from "./ExportButton";
 
 const ObjectProperties = ({
+  shapes,
   selectedObject,
   updateObject,
   deleteShape,
@@ -76,6 +78,7 @@ const ObjectProperties = ({
       >
         Undo
       </button>
+      <ExportButton shapes={shapes} />
 
       {selectedObject && (
         <div>
