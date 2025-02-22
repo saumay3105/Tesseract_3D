@@ -106,7 +106,6 @@ const ShapeControls = ({
     if (meshRef.current) {
       meshRef.current.position.set(...shape.position);
       meshRef.current.rotation.set(...shape.rotation);
-      meshRef.current.scale.set(shape.scale, shape.scale, shape.scale);
     }
   }, [shape]);
 

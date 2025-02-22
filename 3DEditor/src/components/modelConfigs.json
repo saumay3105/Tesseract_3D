@@ -52,7 +52,7 @@
   },
   "woman": {
     "path": "/models/woman.glb",
-    "scale": 0.1
+    "scale": 1
   },
   "dog": {
     "path": "/models/dog.glb",

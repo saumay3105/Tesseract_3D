@@ -74,7 +74,7 @@ const Sidebar = ({
   };
 
   return (
-    <div className="w-1/5 h-screen bg-gray-900 text-white flex">
+    <div className="w-[22vw] h-screen bg-gray-900 text-white flex">
       <div className="w-16 bg-gray-900 border-r border-none flex flex-col">
         <div className="p-3 border-none">
           <Link
@@ -112,7 +112,7 @@ const Sidebar = ({
           <h2 className="text-xl font-bold">Playground</h2>
         </div>
 
-        <div className="flex-1 overflow-y-auto border-b border-gray-800">
+        <div className="flex-1 overflow-y-auto border-b border-gray-800 p-4 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-gray-900 [&::-webkit-scrollbar-thumb]:bg-gray-700 [&::-webkit-scrollbar-thumb]:rounded">
           {renderTabContent()}
         </div>
 
