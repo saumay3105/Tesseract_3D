@@ -31,9 +31,9 @@ const ObjectProperties = ({
     }
   }, [selectedObject]);
 
-  const handlePositionChange = (axis, value) => {
+  const handlePositionChange = (axis, e) => {
     if (!updateObject || !selectedObject) return;
-    const newPosition = { ...position, [axis]: parseFloat(value) };
+    const newPosition = { ...position, [axis]: parseFloat(e) };
     setPosition(newPosition);
     updateObject({
       position: [newPosition.x, newPosition.y, newPosition.z],
@@ -98,9 +98,14 @@ const ObjectProperties = ({
               <label className="text-xs text-gray-400">
                 {axis.toUpperCase()}
               </label>
-              <DraggableInput
-                defaultValue={position[axis]}
-                onChange={(value) => handlePositionChange(axis, value)}
+              <input
+                type="range"
+                min="-5"
+                max="5"
+                step="0.1"
+                value={position[axis]}
+                onChange={(e) => handlePositionChange(axis, e.target.value)}
+                className="w-full"
               />
             </div>
           ))}
