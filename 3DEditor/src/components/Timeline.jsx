@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Play, Pause, FastForward, Rewind } from "lucide-react";
 
 const AnimationTimeline = ({
@@ -9,8 +9,6 @@ const AnimationTimeline = ({
   onTimeUpdate = (frame) => {
     return;
   },
-  playAnimation,
-  stopAnimation,
 }) => {
   const [duration, setDuration] = useState(initialDuration);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -78,11 +76,6 @@ const AnimationTimeline = ({
   const togglePlayPause = () => {
     if (currentFrame >= duration) {
       setCurrentFrame(0);
-    }
-    if (isPlaying) {
-      stopAnimation();
-    } else {
-      playAnimation(0, 100);
     }
     setIsPlaying(!isPlaying);
   };

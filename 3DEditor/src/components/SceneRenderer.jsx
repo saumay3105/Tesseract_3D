@@ -16,8 +16,6 @@ const SceneRenderer = ({
   updateObject,
   currentFrame,
   setCurrentFrame,
-  playAnimation,
-  stopAnimation,
   animationData,
   animationStates,
 }) => {
@@ -63,8 +61,6 @@ const SceneRenderer = ({
       <Timeline
         currentFrame={currentFrame}
         setCurrentFrame={setCurrentFrame}
-        playAnimation={playAnimation}
-        stopAnimation={stopAnimation}
         keyframes={keyframes}
       />
     </div>
