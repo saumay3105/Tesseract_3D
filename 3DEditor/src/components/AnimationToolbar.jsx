@@ -7,6 +7,7 @@ const AnimationToolbar = ({ appliedAnimations, onApply, onDelete }) => {
     "Pulsing",
     "Scaling",
     "Bouncing",
+    "Hovering",
   ];
 
   return (

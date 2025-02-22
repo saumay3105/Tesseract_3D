@@ -11,7 +11,6 @@ import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import { STLLoader } from "three/examples/jsm/loaders/STLLoader";
 import { useLoader } from "@react-three/fiber";
-
 import {
   createPrismGeometry,
   createCapsuleGeometry,
@@ -21,11 +20,37 @@ import {
   createWallGeometry,
   createPyramidGeometry,
 } from "./geometries";
-
 import modelConfigs from "./modelConfigs.json";
 import * as THREE from "three";
 
-// Model component for handling GLB models
+const useHoverAnimation = (
+  ref,
+  animationStates,
+  shapeId,
+  config = { rotationX: 0.2, rotationY: 0.5, lerpSpeed: 0.1 }
+) => {
+  useFrame((state) => {
+    // Only apply animation if the states exist and hovering is true
+    if (!ref.current || !animationStates || !animationStates[shapeId] || !animationStates[shapeId].hovering) {
+      return;
+    }
+
+    const { mouse } = state;
+
+    ref.current.rotation.y = THREE.MathUtils.lerp(
+      ref.current.rotation.y,
+      mouse.x * config.rotationY,
+      config.lerpSpeed
+    );
+
+    ref.current.rotation.x = THREE.MathUtils.lerp(
+      ref.current.rotation.x,
+      mouse.y * config.rotationX,
+      config.lerpSpeed
+    );
+  });
+};
+
 const Model = ({ modelId, isSelected }) => {
   const gltf = useGLTF(modelConfigs[modelId].path);
   const scene = gltf.scene.clone();
@@ -100,10 +125,13 @@ const ShapeControls = ({
   const [offset] = useState(Math.random() * Math.PI * 2);
   const initialPosition = shape.position;
 
+  useHoverAnimation(meshRef, animationStates, shape.id);
+
   useEffect(() => {
     if (meshRef.current) {
       meshRef.current.position.set(...shape.position);
       meshRef.current.rotation.set(...shape.rotation);
+      meshRef.current.scale.set(shape.scale, shape.scale, shape.scale);
     }
   }, [shape]);
 
@@ -117,43 +145,35 @@ const ShapeControls = ({
     let newPosition = [...basePosition];
     let newScale = shape.scale || 1;
 
-    // Handle rotating animation
     if (animations?.rotating) {
       meshRef.current.rotation.y += 0.02;
     }
 
-    // Handle floating animation
     if (animations?.floating) {
       newPosition[1] =
         basePosition[1] + Math.sin(clock.elapsedTime + offset) * 0.2;
     }
 
-    // Handle scaling animation
     if (animations?.scaling) {
       newScale = shape.scale * (1 + Math.sin(clock.elapsedTime * 2) * 0.2);
     }
 
-    // Handle pulsing animation
     if (animations?.pulsing) {
       newScale = shape.scale * (1 + Math.sin(clock.elapsedTime * 4) * 0.1);
     }
 
-    // Handle bouncing animation
     if (animations?.bouncing) {
       newPosition[1] =
         basePosition[1] + Math.abs(Math.sin(clock.elapsedTime * 3)) * 0.3;
     }
 
-    // Apply position updates
     meshRef.current.position.set(...newPosition);
 
-    // Apply scale updates (if changed)
     if (newScale !== shape.scale) {
       meshRef.current.scale.set(newScale, newScale, newScale);
     }
   });
 
-  // Helper function to perform linear interpolation between two values
   const lerp = (start, end, t) => {
     if (Array.isArray(start)) {
       return start.map((s, i) => s + (end[i] - s) * t);
@@ -161,7 +181,6 @@ const ShapeControls = ({
     return start + (end - start) * t;
   };
 
-  // Find the nearest keyframes before and after the current frame
   const findNearestKeyframes = (frameData, currentFrame) => {
     if (!frameData) return { before: null, after: null };
 
@@ -186,37 +205,24 @@ const ShapeControls = ({
     };
   };
 
-  // Get interpolated values for the current frame
   const getInterpolatedValues = (frameData, currentFrame) => {
     if (!frameData) return null;
 
     const { before, after } = findNearestKeyframes(frameData, currentFrame);
 
-    // If no keyframes found, return null
     if (before === null && after === null) return null;
-
-    // If only before keyframe exists, return its values
     if (after === null) return frameData[before];
-
-    // If only after keyframe exists, return its values
     if (before === null) return frameData[after];
 
-    // Calculate interpolation factor
     const t = (currentFrame - before) / (after - before);
 
-    // Interpolate between the two keyframes
     return {
       position: lerp(frameData[before].position, frameData[after].position, t),
     };
   };
 
-  // Check if shape is a model type
   const isModelType = Object.keys(modelConfigs).includes(shape.type);
-
-  // Load textures if applicable
   const texture = shape.texturePath ? useTexture(shape.texturePath) : null;
-
-  // Calculate final scale
   const finalScale = isModelType
     ? shape.scale * (modelConfigs[shape.type]?.scale || 1)
     : shape.scale;
@@ -247,7 +253,6 @@ const ShapeControls = ({
             <ImportedModel shape={shape} isSelected={isSelected} />
           ) : (
             <>
-              {/* Basic Shapes */}
               {shape.type === "cube" && <boxGeometry args={[1, 1, 1]} />}
               {shape.type === "sphere" && (
                 <sphereGeometry args={[0.7, 32, 32]} />
@@ -263,8 +268,6 @@ const ShapeControls = ({
               {shape.type === "pyramid" && (
                 <primitive object={createPyramidGeometry()} />
               )}
-
-              {/* Platonic Solids */}
               {shape.type === "tetrahedron" && (
                 <tetrahedronGeometry args={[0.8]} />
               )}
@@ -277,8 +280,6 @@ const ShapeControls = ({
               {shape.type === "icosahedron" && (
                 <icosahedronGeometry args={[0.8]} />
               )}
-
-              {/* Geometric Shapes */}
               {shape.type === "prism" && (
                 <primitive object={createPrismGeometry()} />
               )}
@@ -288,8 +289,6 @@ const ShapeControls = ({
               {shape.type === "tube" && (
                 <primitive object={createTubeGeometry()} />
               )}
-
-              {/* Architectural Elements */}
               {shape.type === "arch" && (
                 <primitive object={createArchGeometry()} />
               )}
@@ -299,7 +298,6 @@ const ShapeControls = ({
               {shape.type === "wall" && (
                 <primitive object={createWallGeometry()} />
               )}
-
               <meshStandardMaterial
                 color={isSelected ? "yellow" : shape.color}
                 map={texture}
@@ -316,7 +314,6 @@ const ShapeControls = ({
   );
 };
 
-// Preload all models
 Object.values(modelConfigs).forEach((config) => {
   useGLTF.preload(config.path);
 });

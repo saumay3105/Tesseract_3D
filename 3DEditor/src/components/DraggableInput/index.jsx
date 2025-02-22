@@ -1,15 +1,15 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from "react";
 
-const DraggableInput = ({ 
-  defaultValue = 1, 
+const DraggableInput = ({
+  defaultValue = 1,
   onChange = () => {},
-  className = '' 
+  className = "",
 }) => {
   const [value, setValue] = useState(defaultValue);
   const [isDragging, setIsDragging] = useState(false);
   const [startX, setStartX] = useState(0);
   const [startValue, setStartValue] = useState(0);
-  
+
   const handleMouseDown = (e) => {
     setIsDragging(true);
     setStartX(e.clientX);
@@ -20,12 +20,12 @@ const DraggableInput = ({
   useEffect(() => {
     const handleMouseMove = (e) => {
       if (!isDragging) return;
-      
+
       const dx = e.clientX - startX;
       const scaleFactor = 0.01;
-      let newValue = startValue + (dx * scaleFactor);
+      let newValue = startValue + dx * scaleFactor;
       newValue = Math.round(newValue * 100) / 100;
-      
+
       setValue(newValue);
       onChange(newValue);
     };
@@ -35,13 +35,13 @@ const DraggableInput = ({
     };
 
     if (isDragging) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", handleMouseUp);
     }
 
     return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
     };
   }, [isDragging, startX, startValue, onChange]);
 
@@ -63,8 +63,10 @@ const DraggableInput = ({
         cursor-col-resize select-none focus:outline-none focus:ring-2 
         focus:ring-blue-500 hover:bg-gray-50 transition-colors
         flex items-center text-center leading-none
-        ${className} ${isDragging ? 'bg-gray-100 border-gray-400' : 'border-gray-300'}`}
-      style={{ lineHeight: '40px' }}
+        ${className} ${
+        isDragging ? "bg-gray-100 border-gray-400" : "border-gray-300"
+      }`}
+      style={{ lineHeight: "40px" }}
     />
   );
 };
