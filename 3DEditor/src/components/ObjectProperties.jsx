@@ -10,6 +10,9 @@ const ObjectProperties = ({
   deleteShape,
   undo,
   unselect,
+  backgroundColor,
+  setBackgroundColor,
+  environment, setEnvironment,
 }) => {
   const [position, setPosition] = useState({ x: 0, y: 0, z: 0 });
   const [rotation, setRotation] = useState({ x: 0, y: 0 });
@@ -94,7 +97,13 @@ const ObjectProperties = ({
       >
         Undo
       </button>
-      <ExportButton shapes={shapes} animationStates={animationStates} />
+      <ExportButton 
+          shapes={shapes}
+          animationStates={animationStates}
+          environment={environment}
+          backgroundColor={backgroundColor}
+          
+        />
       <h3 className="text-sm font-semibold mb-4">Modify Object:</h3>
 
       {selectedObject && (
