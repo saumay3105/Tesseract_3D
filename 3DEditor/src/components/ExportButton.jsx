@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Copy, CheckCircle2, X } from 'lucide-react';
+import React, { useState } from "react";
+import { Copy, CheckCircle2, X } from "lucide-react";
 import { geometryDefinitions } from "./geometryDefinition";
 import modelConfigs from "./modelConfigs.json";
 
@@ -24,11 +24,10 @@ const ExportPopup = ({ isOpen, onClose, onExport }) => {
     setTimeout(() => setExported(false), 2000);
   };
 
-  
   return (
     <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50">
       <div className="bg-[#1e2127] rounded-lg w-full max-w-md p-6 relative text-gray-200">
-        <button 
+        <button
           onClick={onClose}
           className="absolute right-4 top-4 text-gray-400 hover:text-gray-200"
         >
@@ -42,33 +41,42 @@ const ExportPopup = ({ isOpen, onClose, onExport }) => {
 
         <div className="space-y-6">
           <div>
-            <h3 className="font-medium mb-2 text-white">1. Install Required Dependencies</h3>
+            <h3 className="font-medium mb-2 text-white">
+              1. Install Required Dependencies
+            </h3>
             <div className="flex items-center gap-2 bg-[#282c34] p-3 rounded-md">
-              <code className="text-sm flex-1 text-gray-300">{installCommand}</code>
+              <code className="text-sm flex-1 text-gray-300">
+                {installCommand}
+              </code>
               <button
                 onClick={handleCopy}
                 className="p-2 hover:bg-[#363b44] rounded-md transition-colors"
               >
-                {copied ? 
-                  <CheckCircle2 className="w-4 h-4 text-green-500" /> : 
+                {copied ? (
+                  <CheckCircle2 className="w-4 h-4 text-green-500" />
+                ) : (
                   <Copy className="w-4 h-4 text-gray-400" />
-                }
+                )}
               </button>
             </div>
           </div>
 
           <div>
-            <h3 className="font-medium mb-2 text-white">2. Export Scene File</h3>
+            <h3 className="font-medium mb-2 text-white">
+              2. Export Scene File
+            </h3>
             <button
               onClick={handleExport}
               className="w-full bg-[#6069fa] text-white py-2 px-4 rounded-md hover:bg-[#4c56f8] transition-colors"
             >
-              {exported ? 'Exported!' : 'Export CompiledScene.jsx'}
+              {exported ? "Exported!" : "Export CompiledScene.jsx"}
             </button>
           </div>
 
           <div>
-            <h3 className="font-medium mb-2 text-white">3. Usage Instructions</h3>
+            <h3 className="font-medium mb-2 text-white">
+              3. Usage Instructions
+            </h3>
             <div className="bg-[#282c34] p-4 rounded-md">
               <p className="text-sm text-gray-400 mb-2">
                 Import and use the scene component in your React application:
@@ -133,7 +141,9 @@ const generateCustomGeometryComponent = (usedGeometries) => {
   const geometrySwitch = Array.from(usedGeometries)
     .map(
       (type) => `      case '${type}':
-          geometry = create${type.charAt(0).toUpperCase() + type.slice(1)}Geometry();
+          geometry = create${
+            type.charAt(0).toUpperCase() + type.slice(1)
+          }Geometry();
           break;`
     )
     .join("\n");
@@ -185,21 +195,140 @@ const generateImportedModelComponent = (usedImportedModels) => {
   if (usedImportedModels.size === 0) return "";
 
   return `const ImportedModel = ({ shape }) => {
+    const modelRef = useRef();
+    const [isLoaded, setIsLoaded] = useState(false);
+
+    // Cleanup function to dispose of resources
+    const cleanupModel = () => {
+      if (modelRef.current) {
+        modelRef.current.traverse((child) => {
+          if (child.isMesh) {
+            child.geometry.dispose();
+            child.material.dispose();
+          }
+        });
+      }
+    };
+
+    // Handle model download
+    const handleDownload = async () => {
+      try {
+        const response = await fetch(shape.downloadUrl);
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = shape.name || 'model' + '.' + shape.modelType;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      } catch (error) {
+        console.error("Error downloading model:", error);
+      }
+    };
+
+    // Effect to cleanup on unmount
+    useEffect(() => {
+      return () => {
+        cleanupModel();
+      };
+    }, []);
+
+    // Effect to handle model loading
+    useEffect(() => {
+      setIsLoaded(false);
+      const loadModel = async () => {
+        try {
+          let loadedModel;
+          switch (shape.modelType) {
+            case "glb":
+            case "gltf":
+              loadedModel = await new Promise((resolve, reject) => {
+                const loader = new GLTFLoader();
+                loader.load(
+                  shape.modelUrl,
+                  (gltf) => {
+                    modelRef.current = gltf.scene;
+                    resolve(gltf.scene);
+                  },
+                  undefined,
+                  reject
+                );
+              });
+              break;
+            // Add similar cases for other model types if needed
+          }
+          setIsLoaded(true);
+        } catch (error) {
+          console.error("Error loading model:", error);
+        }
+      };
+
+      loadModel();
+    }, [shape.modelUrl, shape.modelType]);
+
+    if (!isLoaded) {
+      return <group><meshBasicMaterial color="gray" /></group>;
+    }
+
     try {
       switch (shape.modelType) {
         case "glb":
         case "gltf":
-          const model = useLoader(GLTFLoader, shape.modelUrl);
-          return <primitive object={model.scene} />;
+          return (
+            <group>
+              <primitive object={modelRef.current} />
+              {shape.downloadUrl && (
+                <Text3D
+                  position={[0, -1, 0]}
+                  fontSize={0.2}
+                  onClick={handleDownload}
+                  style={{ cursor: 'pointer' }}
+                >
+                  Download Model
+                  <meshStandardMaterial color="white" />
+                </Text3D>
+              )}
+            </group>
+          );
         case "obj":
           const objModel = useLoader(OBJLoader, shape.modelUrl);
-          return <primitive object={objModel} />;
+          return (
+            <group>
+              <primitive object={objModel} />
+              {shape.downloadUrl && (
+                <Text3D
+                  position={[0, -1, 0]}
+                  fontSize={0.2}
+                  onClick={handleDownload}
+                  style={{ cursor: 'pointer' }}
+                >
+                  Download Model
+                  <meshStandardMaterial color="white" />
+                </Text3D>
+              )}
+            </group>
+          );
         case "stl":
           const geometry = useLoader(STLLoader, shape.modelUrl);
           return (
-            <mesh geometry={geometry}>
-              <meshStandardMaterial color={shape.color} />
-            </mesh>
+            <group>
+              <mesh geometry={geometry}>
+                <meshStandardMaterial color={shape.color} />
+              </mesh>
+              {shape.downloadUrl && (
+                <Text3D
+                  position={[0, -1, 0]}
+                  fontSize={0.2}
+                  onClick={handleDownload}
+                  style={{ cursor: 'pointer' }}
+                >
+                  Download Model
+                  <meshStandardMaterial color="white" />
+                </Text3D>
+              )}
+            </group>
           );
         default:
           return null;
@@ -397,8 +526,8 @@ export const ExportButton = ({ shapes, animationStates }) => {
       >
         Export Scene
       </button>
-      
-      <ExportPopup 
+
+      <ExportPopup
         isOpen={isPopupOpen}
         onClose={() => setIsPopupOpen(false)}
         onExport={handleExport}
