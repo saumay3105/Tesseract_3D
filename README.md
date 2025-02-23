@@ -22,13 +22,13 @@ Tesseract3D is a powerful 3D design tool that enables developers and designers t
 - Multiple **environment presets**
 - Custom **background colors and gradients**
 
-### 📤 Export Options
+### 📄 Export Options
 - Export entire scenes as **React components**
 - Automatic generation of required **Three.js** code
 - Optimized for **web performance**
 - Guide for **component usage**
 
-### 🎛️ Experience
+### 🎧 Experience
 - Clean, **intuitive user interface**
 - **Keyboard shortcuts** for interacting with the scene
 
@@ -50,7 +50,7 @@ git clone https://github.com/33Surya66/Tesseract_3D.git
 ```
 
 #### 2️⃣ Setup
-Navigate to the `backend` directory and install the dependencies:
+Navigate to the `3DEditor` directory and install the dependencies:
 ```bash
 cd 3DEditor
 npm install
@@ -59,6 +59,17 @@ npm install
 Start the development server:
 ```bash
 npm run dev
+```
+
+Navigate to the `backend` directory and install dependencies:
+```bash
+cd backend
+npm install
+```
+
+Start the backend server:
+```bash
+node server.js
 ```
 
 ---
@@ -93,11 +104,12 @@ npm run dev
 
 ---
 
-## 🏗 Tech Stack
+## 🗷 Tech Stack
 
 - **Frontend:** React
 - **3D Rendering:** Three.js
 - **Build Tools:** Vite
+- **Backend:** Node.js, Express
 
 ---
 
@@ -105,6 +117,6 @@ npm run dev
 
 We welcome contributions from the community! Please read our [CONTRIBUTING.md](./CONTRIBUTING.md) before making any changes.
 
-
 ## License
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for more details.
+
