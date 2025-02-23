@@ -8,28 +8,6 @@ import { useLoader } from "@react-three/fiber";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 
-const Model = ({ modelPath, position, rotation, scale, defaultScale = 1 }) => {
-  const gltf = useGLTF(modelPath);
-  const scene = gltf.scene.clone();
-
-  scene.traverse((node) => {
-    if (node.isMesh) {
-      node.material = node.material.clone();
-      node.material.emissiveIntensity = 0;
-      node.material.transparent = false;
-      node.material.opacity = 1;
-    }
-  });
-
-  scene.scale.set(
-    scale * defaultScale,
-    scale * defaultScale,
-    scale * defaultScale
-  );
-
-  return <primitive object={scene} />;
-};
-
 const ModelObject = ({
   children,
   shape,
@@ -99,33 +77,21 @@ const Scene = () => {
         <directionalLight position={[5, 5, 5]} />
         <OrbitControls makeDefault />
         <ModelObject
-          key={1740300459422}
+          key={1740302164728}
           shape={{
             position: [0, 0, 0],
             rotation: [0, 0, 0],
             color: "#888888",
-            scale: 0.6,
-            id: 1740300459422,
-            type: "car",
-            icon: "🚗",
+            scale: 1,
+            id: 1740302164728,
+            type: "sphere",
+            icon: "○",
           }}
-          animationStates={{
-            1740300459422: { floating: true, hovering: true },
-          }}
+          animationStates={{ 1740302164728: { floating: true } }}
         >
-          <mesh
-            position={[0, 0, 0]}
-            rotation={[0, 0, 0]}
-            scale={[0.6, 0.6, 0.6]}
-          >
-            {" "}
-            <Model
-              modelPath="/models/car.glb"
-              position={[0, 0, 0]}
-              rotation={[0, 0, 0]}
-              scale={0.6}
-              defaultScale={0.1}
-            />
+          <mesh position={[0, 0, 0]} rotation={[0, 0, 0]} scale={[1, 1, 1]}>
+            <sphereGeometry />
+            <meshStandardMaterial color="#888888" map={null} />
           </mesh>
         </ModelObject>
       </Canvas>
