@@ -5,8 +5,13 @@ const cors = require('cors');
 const fs = require('fs');
 
 const app = express();
-app.use(cors());
-app.use(express.json());
+app.use(
+  cors({
+    origin: 'http://localhost:5173', // Allow only this origin
+    methods: ['GET', 'POST', 'PUT', 'DELETE'], // Specify allowed methods
+    credentials: true, // Allow cookies if needed
+  })
+);app.use(express.json());
 
 // Create uploads directory if it doesn't exist
 const uploadDir = path.join(__dirname, 'uploads');
