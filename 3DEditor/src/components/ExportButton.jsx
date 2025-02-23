@@ -295,6 +295,8 @@ const generateCustomAnimationFunctions = () => {
 
 // Generate environment component
 const generateEnvironmentComponent = (environment, backgroundColor) => {
+  console.log(environment);
+  console.log("environment");
   switch (environment) {
     case "stars":
       return `<Stars count={5000} depth={50} factor={4} saturation={0} fade speed={1} />`;
@@ -319,7 +321,7 @@ const generateEnvironmentComponent = (environment, backgroundColor) => {
 };
 
 // Helper function to generate JSX for each shape
-const generateShapeJSX = (shape) => {
+const generateShapeJSX = (shape, shapeAnimationData) => {
   const { position, rotation, scale, color, type, texturePath, text, height } =
     shape;
   const pos = `[${position.join(", ")}]`;
@@ -462,9 +464,9 @@ const addModel = (shape, animationStates, animationData) => {
 export const exportScene = (
   shapes,
   animationStates,
+  animationData,
   environment,
-  backgroundColor,
-  animationData
+  backgroundColor
 ) => {
   const { usedGeometries, usedModels, usedImportedModels, basicShapes } =
     analyzeShapeUsage(shapes);
@@ -525,7 +527,13 @@ export const ExportButton = ({
   const [isPopupOpen, setIsPopupOpen] = useState(false);
 
   const handleExport = () => {
-    exportScene(shapes, animationStates, environment, backgroundColor);
+    exportScene(
+      shapes,
+      animationStates,
+      animationData,
+      environment,
+      backgroundColor
+    );
   };
 
   return (
@@ -533,20 +541,6 @@ export const ExportButton = ({
       <button
         onClick={() => setIsPopupOpen(true)}
         className="px-5 py-2.5 bg-[#6069fa] text-white rounded-md hover:bg-[#4c56f8] transition-colors font-medium"
-      >
-        Export Scene
-      </button>
-      <button
-        onClick={() => exportScene(shapes, animationStates, animationData)}
-        style={{
-          padding: "10px 20px",
-          backgroundColor: "#4CAF50",
-          color: "white",
-          border: "none",
-          borderRadius: "4px",
-          cursor: "pointer",
-          fontSize: "16px",
-        }}
       >
         Export Scene
       </button>

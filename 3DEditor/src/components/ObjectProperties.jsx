@@ -106,7 +106,6 @@ const ObjectProperties = ({
         environment={environment}
         backgroundColor={backgroundColor}
       />
-      <h3 className="text-sm font-semibold mb-4">Modify Object:</h3>
 
       {selectedObject && (
         <div>
