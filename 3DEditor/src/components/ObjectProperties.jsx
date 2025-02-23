@@ -4,6 +4,7 @@ import { ExportButton } from "./ExportButton";
 
 const ObjectProperties = ({
   shapes,
+  animationStates,
   selectedObject,
   updateObject,
   deleteShape,
@@ -13,6 +14,25 @@ const ObjectProperties = ({
   const [position, setPosition] = useState({ x: 0, y: 0, z: 0 });
   const [rotation, setRotation] = useState({ x: 0, y: 0 });
   const [scale, setScale] = useState(1);
+
+  useEffect(() => {
+    const updatedPosition = shapes.filter(
+      (shape) => shape.id === selectedObject?.id
+    )[0]?.position;
+    if (updatedPosition) {
+      // console.log("updatedPosition", updatedPosition);
+      setPosition({
+        x: updatedPosition[0],
+        y: updatedPosition[1],
+        z: updatedPosition[2],
+      });
+    }
+  }, [shapes]);
+
+  useEffect(() => {
+    console.log(position);
+    console.log("position");
+  }, [position]);
 
   useEffect(() => {
     if (
@@ -70,14 +90,15 @@ const ObjectProperties = ({
   };
 
   return (
-    <div className="absolute top-5 right-2 bg-gray-800 p-4 rounded-lg shadow-lg text-white w-64">
+    <div className="absolute top-5 right-2 bg-gray-800 p-4 rounded-lg shadow-lg text-white w-64 mr-">
       <button
         className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded mr-2 mb-2"
         onClick={undo}
       >
         Undo
       </button>
-      <ExportButton shapes={shapes} />
+      <ExportButton shapes={shapes} animationStates={animationStates} />
+      <h3 className="text-sm font-semibold mb-4">Modify Object:</h3>
 
       {selectedObject && (
         <div>
@@ -107,7 +128,10 @@ const ObjectProperties = ({
                   </label>
                   <DraggableInput
                     defaultValue={position[axis]}
+                    value={position[axis]}
+                    setValue={setPosition}
                     onChange={(value) => handlePositionChange(axis, value)}
+                    scaleFactor={0.01}
                   />
                 </div>
               ))}

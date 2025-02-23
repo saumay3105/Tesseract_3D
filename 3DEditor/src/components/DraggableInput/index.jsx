@@ -1,11 +1,18 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 
 const DraggableInput = ({
   defaultValue = 1,
   onChange = () => {},
   className = "",
+  value = defaultValue,
+  setValue = null,
+  scaleFactor = 0.05,
 }) => {
-  const [value, setValue] = useState(defaultValue);
+  // Ensure setValue is available
+  const [localValue, setLocalValue] = useState(defaultValue);
+  const controlledValue = setValue ? value : localValue;
+  const setControlledValue = setValue || setLocalValue;
+
   const [isDragging, setIsDragging] = useState(false);
   const [startX, setStartX] = useState(0);
   const [startValue, setStartValue] = useState(0);
@@ -13,7 +20,7 @@ const DraggableInput = ({
   const handleMouseDown = (e) => {
     setIsDragging(true);
     setStartX(e.clientX);
-    setStartValue(parseFloat(value) || defaultValue);
+    setStartValue(parseFloat(controlledValue) || defaultValue);
     e.preventDefault();
   };
 
@@ -22,11 +29,10 @@ const DraggableInput = ({
       if (!isDragging) return;
 
       const dx = e.clientX - startX;
-      const scaleFactor = 0.05;
       let newValue = startValue + dx * scaleFactor;
       newValue = Math.round(newValue * 100) / 100;
 
-      setValue(newValue);
+      setControlledValue(newValue);
       onChange(newValue);
     };
 
@@ -43,31 +49,25 @@ const DraggableInput = ({
       document.removeEventListener("mousemove", handleMouseMove);
       document.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [isDragging, startX, startValue, onChange]);
+  }, [isDragging, startX, startValue, scaleFactor, onChange]);
 
   const handleInputChange = (e) => {
     const newValue = e.target.value;
-    setValue(newValue);
+    setControlledValue(newValue);
     if (!isNaN(parseFloat(newValue))) {
       onChange(parseFloat(newValue));
     }
   };
 
   return (
-    <input
-      type="text"
-      value={value}
-      onChange={handleInputChange}
-      onMouseDown={handleMouseDown}
-      className={`w-24 h-10 text-black text-sm font-medium border rounded
-        cursor-col-resize select-none focus:outline-none focus:ring-2 
-        focus:ring-blue-500 hover:bg-gray-50 transition-colors
-        flex items-center text-center leading-none
-        ${className} ${
-        isDragging ? "bg-gray-100 border-gray-400" : "border-gray-300"
-      }`}
-      style={{ lineHeight: "40px" }}
-    />
+    <div className="relative flex items-center">
+      <input
+        value={controlledValue}
+        onChange={handleInputChange}
+        className={`w-full px-2 py-1 bg-gray-700 cursor-col-resize rounded text-white text-sm ${className}`}
+        onMouseDown={handleMouseDown}
+      />
+    </div>
   );
 };
 

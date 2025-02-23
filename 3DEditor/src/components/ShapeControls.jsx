@@ -168,6 +168,37 @@ const ShapeControls = ({
   useHoverAnimation(meshRef, animationStates, shape.id);
 
   useEffect(() => {
+    if (transformRef.current) {
+      const controls = transformRef.current;
+
+      // Only handle position updates when dragging ends
+      const handleDraggingChanged = (event) => {
+        if (!event.value) {
+          // When dragging stops
+          if (meshRef.current) {
+            const newPosition = [
+              meshRef.current.position.x,
+              meshRef.current.position.y,
+              meshRef.current.position.z,
+            ];
+
+            updateObject({
+              position: newPosition,
+            });
+          }
+        }
+      };
+
+      // Listen only for drag end events
+      controls.addEventListener("dragging-changed", handleDraggingChanged);
+
+      return () => {
+        controls.removeEventListener("dragging-changed", handleDraggingChanged);
+      };
+    }
+  }, [updateObject]);
+
+  useEffect(() => {
     if (meshRef.current) {
       meshRef.current.position.set(...shape.position);
       meshRef.current.rotation.set(...shape.rotation);
@@ -274,7 +305,7 @@ const ShapeControls = ({
         <mesh
           ref={meshRef}
           position={
-            getInterpolatedValues(shapeAnimationData, currentFrame)?.position ||
+            // getInterpolatedValues(shapeAnimationData, currentFrame)?.position
             shape.position
           }
           scale={[finalScale, finalScale, finalScale]}
