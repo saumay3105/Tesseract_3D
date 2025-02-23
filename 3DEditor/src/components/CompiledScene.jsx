@@ -8,6 +8,28 @@ import { useLoader } from "@react-three/fiber";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 
+const Model = ({ modelPath, position, rotation, scale, defaultScale = 1 }) => {
+  const gltf = useGLTF(modelPath);
+  const scene = gltf.scene.clone();
+
+  scene.traverse((node) => {
+    if (node.isMesh) {
+      node.material = node.material.clone();
+      node.material.emissiveIntensity = 0;
+      node.material.transparent = false;
+      node.material.opacity = 1;
+    }
+  });
+
+  scene.scale.set(
+    scale * defaultScale,
+    scale * defaultScale,
+    scale * defaultScale
+  );
+
+  return <primitive object={scene} />;
+};
+
 const ModelObject = ({
   children,
   shape,
@@ -18,14 +40,30 @@ const ModelObject = ({
   const [offset] = useState(Math.random() * Math.PI * 2);
   const initialPosition = shape.position;
 
-  useFrame(({ clock }) => {
+  useFrame(({ clock, mouse }) => {
     if (!meshRef.current || !animationStates[shape.id]) return;
+
     const animations = animationStates[shape.id];
     const basePosition = Array.isArray(initialPosition)
       ? initialPosition
       : [0, 0, 0];
     let newPosition = [...basePosition];
     let newScale = shape.scale || 1;
+    const config = { rotationX: 0.2, rotationY: 0.5, lerpSpeed: 0.1 };
+
+    if (animations?.hovering) {
+      meshRef.current.rotation.y = THREE.MathUtils.lerp(
+        meshRef.current.rotation.y,
+        mouse.x * (config.rotationY || 0.5),
+        config.lerpSpeed || 0.1
+      );
+
+      meshRef.current.rotation.x = THREE.MathUtils.lerp(
+        meshRef.current.rotation.x,
+        mouse.y * (config.rotationX || 0.2),
+        config.lerpSpeed || 0.1
+      );
+    }
     if (animations?.rotating) {
       meshRef.current.rotation.y += 0.02;
     }
@@ -43,6 +81,7 @@ const ModelObject = ({
       newPosition[1] =
         basePosition[1] + Math.abs(Math.sin(clock.elapsedTime * 3)) * 0.3;
     }
+
     meshRef.current.position.set(...newPosition);
     if (newScale !== shape.scale) {
       meshRef.current.scale.set(newScale, newScale, newScale);
@@ -60,41 +99,33 @@ const Scene = () => {
         <directionalLight position={[5, 5, 5]} />
         <OrbitControls makeDefault />
         <ModelObject
-          key={1740300992340}
+          key={1740300459422}
           shape={{
             position: [0, 0, 0],
             rotation: [0, 0, 0],
-            color: "#662e2e",
-            scale: 1.3,
-            type: "ThreeDText",
-            text: "miran",
-            height: 0.3,
-            icon: "📝",
-            id: 1740300992340,
+            color: "#888888",
+            scale: 0.6,
+            id: 1740300459422,
+            type: "car",
+            icon: "🚗",
           }}
           animationStates={{
-            1740300992340: { hovering: false, bouncing: true },
+            1740300459422: { floating: true, hovering: true },
           }}
         >
           <mesh
             position={[0, 0, 0]}
             rotation={[0, 0, 0]}
-            scale={[1.3, 1.3, 1.3]}
+            scale={[0.6, 0.6, 0.6]}
           >
-            <Text3D
-              font="/fonts/helvetiker_regular.typeface.json"
-              size={1.3}
-              height={0.3}
-              curveSegments={12}
-              bevelEnabled={true}
-              bevelThickness={0.01}
-              bevelSize={0.02}
-              bevelOffset={0}
-              bevelSegments={5}
-            >
-              miran
-              <meshStandardMaterial color="#662e2e" />
-            </Text3D>
+            {" "}
+            <Model
+              modelPath="/models/car.glb"
+              position={[0, 0, 0]}
+              rotation={[0, 0, 0]}
+              scale={0.6}
+              defaultScale={0.1}
+            />
           </mesh>
         </ModelObject>
       </Canvas>
