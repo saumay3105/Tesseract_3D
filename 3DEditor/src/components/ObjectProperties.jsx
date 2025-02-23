@@ -17,10 +17,9 @@ const ObjectProperties = ({
   setEnvironment,
 }) => {
   const [position, setPosition] = useState({ x: 0, y: 0, z: 0 });
-  const [rotation, setRotation] = useState({ x: 0, y: 0 });
+  const [rotation, setRotation] = useState({ x: 0, y: 0, z: 0 });
   const [scale, setScale] = useState(1);
 
-  // Remove the duplicate useEffects and combine them into one
   useEffect(() => {
     if (selectedObject && shapes.length > 0) {
       const currentShape = shapes.find(
@@ -50,6 +49,7 @@ const ObjectProperties = ({
       setRotation({
         x: (selectedObject.rotation[0] || 0) * (180 / Math.PI),
         y: (selectedObject.rotation[1] || 0) * (180 / Math.PI),
+        z: (selectedObject.rotation[2] || 0) * (180 / Math.PI),
       });
       setScale(selectedObject.scale || 1);
     }
@@ -67,19 +67,17 @@ const ObjectProperties = ({
   const handleRotationChange = (axis, value) => {
     if (!updateObject || !selectedObject?.rotation) return;
     const degrees = parseFloat(value);
-    setRotation((prev) => ({ ...prev, [axis]: degrees }));
+
+    // Update local rotation state
+    const newRotation = { ...rotation, [axis]: degrees };
+    setRotation(newRotation);
+
+    // Convert all angles to radians while preserving other axes
     updateObject({
       rotation: [
-        axis === "x"
-          ? degrees * (Math.PI / 180)
-          : selectedObject.rotation[0] || 0,
-        axis === "y"
-          ? degrees * (Math.PI / 180)
-          : selectedObject.rotation[1] || 0,
-
-        axis === "z"
-          ? degrees * (Math.PI / 180)
-          : selectedObject.rotation[2] || 0,
+        newRotation.x * (Math.PI / 180),
+        newRotation.y * (Math.PI / 180),
+        newRotation.z * (Math.PI / 180),
       ],
     });
   };
