@@ -1,6 +1,5 @@
 import { geometryDefinitions } from "./geometryDefinition";
 import modelConfigs from "./modelConfigs.json";
-import { useFrame } from "@react-three/fiber";
 
 // Function to analyze which geometries and models are used
 const analyzeShapeUsage = (shapes) => {
@@ -25,7 +24,7 @@ const analyzeShapeUsage = (shapes) => {
 };
 
 // Generate imports section
-const generateImports = (usedGeometries, basicShapes) => {
+const generateImports = () => {
   return `import React, { useState, Suspense, useRef, useEffect } from 'react';
   import { Canvas } from '@react-three/fiber';
   import { OrbitControls } from '@react-three/drei';
@@ -178,14 +177,30 @@ const generateModelObject = () => {
             const [offset] = useState(Math.random() * Math.PI * 2);
             const initialPosition = shape.position;
             
-            useFrame(({ clock }) => {
+            useFrame(({ clock, mouse }) => {
               if (!meshRef.current || !animationStates[shape.id]) return;
+          
               const animations = animationStates[shape.id];
               const basePosition = Array.isArray(initialPosition)
                 ? initialPosition
                 : [0, 0, 0];
               let newPosition = [...basePosition];
               let newScale = shape.scale || 1;
+              const config = { rotationX: 0.2, rotationY: 0.5, lerpSpeed: 0.1 };
+          
+              if (animations?.hovering) {
+                meshRef.current.rotation.y = THREE.MathUtils.lerp(
+                  meshRef.current.rotation.y,
+                  mouse.x * (config.rotationY || 0.5),
+                  config.lerpSpeed || 0.1
+                );
+          
+                meshRef.current.rotation.x = THREE.MathUtils.lerp(
+                  meshRef.current.rotation.x,
+                  mouse.y * (config.rotationX || 0.2),
+                  config.lerpSpeed || 0.1
+                );
+              }
               if (animations?.rotating) {
                 meshRef.current.rotation.y += 0.02;
               }
@@ -203,6 +218,7 @@ const generateModelObject = () => {
                 newPosition[1] =
                   basePosition[1] + Math.abs(Math.sin(clock.elapsedTime * 3)) * 0.3;
               }
+          
               meshRef.current.position.set(...newPosition);
               if (newScale !== shape.scale) {
                 meshRef.current.scale.set(newScale, newScale, newScale);
