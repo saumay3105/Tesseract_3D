@@ -5,16 +5,7 @@ const cors = require('cors');
 const fs = require('fs');
 
 const app = express();
-app.use(cors({
-  origin: [
-    'http://localhost:5173',
-    'https://tesseract-3d.onrender.com',
-    // Add any other allowed origins here
-  ],
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  credentials: true,
-  exposedHeaders: ['Content-Disposition'] // Important for downloads
-}));
+app.use(cors());
 
 app.use(express.json());
 
