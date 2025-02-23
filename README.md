@@ -61,7 +61,7 @@ Start the development server:
 npm run dev
 ```
 
-Navigate to the `backend` directory and install dependencies:
+Open another terminal and navigate to the `backend` directory and install dependencies:
 ```bash
 cd backend
 npm install
