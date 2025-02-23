@@ -18,7 +18,9 @@ const ObjectProperties = ({
   // Remove the duplicate useEffects and combine them into one
   useEffect(() => {
     if (selectedObject && shapes.length > 0) {
-      const currentShape = shapes.find(shape => shape.id === selectedObject.id);
+      const currentShape = shapes.find(
+        (shape) => shape.id === selectedObject.id
+      );
       if (currentShape?.position) {
         setPosition({
           x: currentShape.position[0],
