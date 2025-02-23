@@ -11,7 +11,8 @@ app.use(
     methods: ['GET', 'POST', 'PUT', 'DELETE'], // Specify allowed methods
     credentials: true, // Allow cookies if needed
   })
-);app.use(express.json());
+);
+app.use(express.json());
 
 // Create uploads directory if it doesn't exist
 const uploadDir = path.join(__dirname, 'uploads');
