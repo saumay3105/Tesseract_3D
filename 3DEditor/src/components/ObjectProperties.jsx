@@ -15,24 +15,19 @@ const ObjectProperties = ({
   const [rotation, setRotation] = useState({ x: 0, y: 0 });
   const [scale, setScale] = useState(1);
 
+  // Remove the duplicate useEffects and combine them into one
   useEffect(() => {
-    const updatedPosition = shapes.filter(
-      (shape) => shape.id === selectedObject?.id
-    )[0]?.position;
-    if (updatedPosition) {
-      // console.log("updatedPosition", updatedPosition);
-      setPosition({
-        x: updatedPosition[0],
-        y: updatedPosition[1],
-        z: updatedPosition[2],
-      });
+    if (selectedObject && shapes.length > 0) {
+      const currentShape = shapes.find(shape => shape.id === selectedObject.id);
+      if (currentShape?.position) {
+        setPosition({
+          x: currentShape.position[0],
+          y: currentShape.position[1],
+          z: currentShape.position[2],
+        });
+      }
     }
-  }, [shapes]);
-
-  useEffect(() => {
-    console.log(position);
-    console.log("position");
-  }, [position]);
+  }, [shapes, selectedObject]);
 
   useEffect(() => {
     if (
