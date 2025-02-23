@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import React, { useState } from "react";
 import { Copy, CheckCircle2, X } from "lucide-react";
 import { geometryDefinitions } from "./geometryDefinition";
@@ -118,7 +119,7 @@ const analyzeShapeUsage = (shapes) => {
 const generateImports = () => {
   return `import React, { useState, Suspense, useRef, useEffect } from 'react';
   import { Canvas } from '@react-three/fiber';
-  import { OrbitControls, Text3D } from '@react-three/drei';
+  import { OrbitControls, Text3D, Stars, Sky, Cloud, Environment } from '@react-three/drei';
   import { useGLTF } from "@react-three/drei";
   import { useTexture } from "@react-three/drei";
   import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
@@ -340,8 +341,106 @@ const generateImportedModelComponent = (usedImportedModels) => {
   };`;
 };
 
+const generateCustomAnimationFunctions = () => {
+  return `
+  const useCurrentFrame = (maxFrames = 100, speed = 1) => {
+    const [currentFrame, setCurrentFrame] = useState(0);
+    const direction = useRef(1); // 1 for forward, -1 for reverse
+  
+    useFrame(() => {
+      setCurrentFrame((prev) => {
+        let nextFrame = prev + direction.current * speed;
+        if (nextFrame >= maxFrames) {
+          nextFrame = maxFrames;
+          direction.current = -1;
+        } else if (nextFrame <= 0) {
+          nextFrame = 0;
+          direction.current = 1;
+        }
+        return nextFrame;
+      });
+    });
+  
+    return currentFrame;
+  };
+
+  const lerp = (start, end, t) => {
+    if (Array.isArray(start)) {
+      return start.map((s, i) => s + (end[i] - s) * t);
+    }
+    return start + (end - start) * t;
+  };
+
+  const findNearestKeyframes = (frameData, currentFrame) => {
+    if (!frameData) return { before: null, after: null };
+
+    const frames = Object.keys(frameData)
+      .map(Number)
+      .sort((a, b) => a - b);
+
+    const beforeFrame = frames.reduce((prev, frame) => {
+      if (frame <= currentFrame && frame > prev) return frame;
+      return prev;
+    }, -Infinity);
+
+    const afterFrame = frames.reduce((prev, frame) => {
+      if (frame > currentFrame && (prev === Infinity || frame < prev))
+        return frame;
+      return prev;
+    }, Infinity);
+
+    return {
+      before: beforeFrame === -Infinity ? null : beforeFrame,
+      after: afterFrame === Infinity ? null : afterFrame,
+    };
+  };
+
+  const getInterpolatedValues = (frameData, currentFrame) => {
+    if (!frameData) return null;
+
+    const { before, after } = findNearestKeyframes(frameData, currentFrame);
+
+    if (before === null && after === null) return null;
+    if (after === null) return frameData[before];
+    if (before === null) return frameData[after];
+
+    const t = (currentFrame - before) / (after - before);
+
+    return {
+      position: lerp(frameData[before].position, frameData[after].position, t),
+    };
+  };`;
+};
+
+// Generate environment component
+const generateEnvironmentComponent = (environment, backgroundColor) => {
+  console.log(environment);
+  console.log("environment");
+  switch (environment) {
+    case "stars":
+      return `<Stars count={5000} depth={50} factor={4} saturation={0} fade speed={1} />`;
+    case "sky":
+      return `<Sky sunPosition={[0, 1, 0]} />`;
+    case "clouds":
+      return `<Cloud 
+          position={[0, 15, 0]}
+          opacity={0.7}
+          speed={0.4}
+          width={10}
+          depth={1.5}
+          segments={20}
+        />`;
+    case "sunset":
+      return `<Environment preset="sunset" background blur={0.4} />`;
+    case "color":
+      return `<color attach="background" args={[${backgroundColor}]} />`;
+    default:
+      return null;
+  }
+};
+
 // Helper function to generate JSX for each shape
-const generateShapeJSX = (shape) => {
+const generateShapeJSX = (shape, shapeAnimationData) => {
   const { position, rotation, scale, color, type, texturePath, text, height } =
     shape;
   const pos = `[${position.join(", ")}]`;
@@ -350,7 +449,13 @@ const generateShapeJSX = (shape) => {
   const isModelType = modelConfigs[type];
   const texture = texturePath ? `useTexture('${texturePath}')` : "null";
 
-  let jsx = `<mesh position={${pos}} rotation={${rot}} scale={[${scale}, ${scale}, ${scale}]}>`;
+  let jsx = `<mesh position={${
+    shapeAnimationData && Object.keys(shapeAnimationData).length
+      ? `getInterpolatedValues(${JSON.stringify(
+          shapeAnimationData
+        )}, currentFrame)?.position`
+      : pos
+  }} rotation={${rot}} scale={[${scale}, ${scale}, ${scale}]}>`;
 
   if (shape.type === "importedModel") {
     return `<ImportedModel shape={${JSON.stringify(shape)}} />`;
@@ -396,16 +501,20 @@ const generateShapeJSX = (shape) => {
             <meshStandardMaterial color="${color}" map={${texture}} />
           </mesh>`;
 };
+
 const generateModelObject = () => {
   return `const ModelObject = ({
             children,
             shape,
             animationStates = {},
             shapeAnimationData,
+            setCurrentFrame,
           }) => {
             const meshRef = useRef();
             const [offset] = useState(Math.random() * Math.PI * 2);
             const initialPosition = shape.position;
+            
+            setCurrentFrame(useCurrentFrame());
             
             useFrame(({ clock, mouse }) => {
               if (!meshRef.current || !animationStates[shape.id]) return;
@@ -458,19 +567,26 @@ const generateModelObject = () => {
             return <mesh ref={meshRef}>{children}</mesh>;
           };`;
 };
-
-const addModel = (shape, animationStates) => {
+const addModel = (shape, animationStates, animationData) => {
   return `<ModelObject
               key={${shape.id}}
               shape={${JSON.stringify(shape)}}
               animationStates={${JSON.stringify(animationStates)}}
+              animationData={${JSON.stringify(animationData[shape.id])}}
+              setCurrentFrame={setCurrentFrame}
             >
-            ${generateShapeJSX(shape)}
+            ${generateShapeJSX(shape, animationData[shape.id])}
             </ModelObject>`;
 };
 
 // Main export function
-const exportScene = (shapes, animationStates) => {
+export const exportScene = (
+  shapes,
+  animationStates,
+  animationData,
+  environment,
+  backgroundColor
+) => {
   const { usedGeometries, usedModels, usedImportedModels, basicShapes } =
     analyzeShapeUsage(shapes);
 
@@ -481,16 +597,25 @@ const exportScene = (shapes, animationStates) => {
   ${generateModelComponent(usedModels)}
   ${generateImportedModelComponent(usedImportedModels)}
   ${generateModelObject()}
-
+  ${generateCustomAnimationFunctions()}
     
   const Scene = () => {
+    const [currentFrame, setCurrentFrame] = useState(0);
+
     return (
-      <div className="absolute inset-0">
+      <div className="absolute inset-0" style={{
+        background: ${
+          environment === "color" ? `"${backgroundColor}"` : `"transparent"`
+        }
+      }}>
       <Canvas camera={{ position: [5, 5, 5], fov: 50 }}>
         <ambientLight intensity={0.5} />
         <directionalLight position={[5, 5, 5]} />
         <OrbitControls makeDefault />
-          ${shapes.map((shape) => addModel(shape, animationStates))}
+          ${shapes.map((shape) =>
+            addModel(shape, animationStates, animationData)
+          )}
+          ${generateEnvironmentComponent(environment, backgroundColor)}
       </Canvas>
       </div>
     );
@@ -511,11 +636,23 @@ const exportScene = (shapes, animationStates) => {
 };
 
 // Export button component
-export const ExportButton = ({ shapes, animationStates }) => {
+export const ExportButton = ({
+  shapes,
+  animationStates,
+  animationData,
+  environment,
+  backgroundColor,
+}) => {
   const [isPopupOpen, setIsPopupOpen] = useState(false);
 
   const handleExport = () => {
-    exportScene(shapes, animationStates);
+    exportScene(
+      shapes,
+      animationStates,
+      animationData,
+      environment,
+      backgroundColor
+    );
   };
 
   return (
@@ -526,7 +663,6 @@ export const ExportButton = ({ shapes, animationStates }) => {
       >
         Export Scene
       </button>
-
       <ExportPopup
         isOpen={isPopupOpen}
         onClose={() => setIsPopupOpen(false)}
