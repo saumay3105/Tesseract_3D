@@ -253,6 +253,7 @@ const Playground = () => {
         <ObjectProperties
           shapes={shapes}
           animationStates={animationStates}
+          animationData={animationData}
           selectedObject={selectedObject}
           updateObject={updateObject}
           deleteShape={deleteShape}

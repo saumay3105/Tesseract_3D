@@ -5,6 +5,7 @@ import { ExportButton } from "./ExportButton";
 const ObjectProperties = ({
   shapes,
   animationStates,
+  animationData,
   selectedObject,
   updateObject,
   deleteShape,
@@ -94,7 +95,11 @@ const ObjectProperties = ({
       >
         Undo
       </button>
-      <ExportButton shapes={shapes} animationStates={animationStates} />
+      <ExportButton
+        shapes={shapes}
+        animationStates={animationStates}
+        animationData={animationData}
+      />
       <h3 className="text-sm font-semibold mb-4">Modify Object:</h3>
 
       {selectedObject && (

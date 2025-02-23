@@ -8,37 +8,18 @@ import { useLoader } from "@react-three/fiber";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 
-const Model = ({ modelPath, position, rotation, scale, defaultScale = 1 }) => {
-  const gltf = useGLTF(modelPath);
-  const scene = gltf.scene.clone();
-
-  scene.traverse((node) => {
-    if (node.isMesh) {
-      node.material = node.material.clone();
-      node.material.emissiveIntensity = 0;
-      node.material.transparent = false;
-      node.material.opacity = 1;
-    }
-  });
-
-  scene.scale.set(
-    scale * defaultScale,
-    scale * defaultScale,
-    scale * defaultScale
-  );
-
-  return <primitive object={scene} />;
-};
-
 const ModelObject = ({
   children,
   shape,
   animationStates = {},
   shapeAnimationData,
+  setCurrentFrame,
 }) => {
   const meshRef = useRef();
   const [offset] = useState(Math.random() * Math.PI * 2);
   const initialPosition = shape.position;
+
+  setCurrentFrame(useCurrentFrame());
 
   useFrame(({ clock, mouse }) => {
     if (!meshRef.current || !animationStates[shape.id]) return;
@@ -91,7 +72,77 @@ const ModelObject = ({
   return <mesh ref={meshRef}>{children}</mesh>;
 };
 
+const useCurrentFrame = (maxFrames = 100, speed = 1) => {
+  const [currentFrame, setCurrentFrame] = useState(0);
+  const direction = useRef(1); // 1 for forward, -1 for reverse
+
+  useFrame(() => {
+    setCurrentFrame((prev) => {
+      let nextFrame = prev + direction.current * speed;
+      if (nextFrame >= maxFrames) {
+        nextFrame = maxFrames;
+        direction.current = -1;
+      } else if (nextFrame <= 0) {
+        nextFrame = 0;
+        direction.current = 1;
+      }
+      return nextFrame;
+    });
+  });
+
+  return currentFrame;
+};
+
+const lerp = (start, end, t) => {
+  if (Array.isArray(start)) {
+    return start.map((s, i) => s + (end[i] - s) * t);
+  }
+  return start + (end - start) * t;
+};
+
+const findNearestKeyframes = (frameData, currentFrame) => {
+  if (!frameData) return { before: null, after: null };
+
+  const frames = Object.keys(frameData)
+    .map(Number)
+    .sort((a, b) => a - b);
+
+  const beforeFrame = frames.reduce((prev, frame) => {
+    if (frame <= currentFrame && frame > prev) return frame;
+    return prev;
+  }, -Infinity);
+
+  const afterFrame = frames.reduce((prev, frame) => {
+    if (frame > currentFrame && (prev === Infinity || frame < prev))
+      return frame;
+    return prev;
+  }, Infinity);
+
+  return {
+    before: beforeFrame === -Infinity ? null : beforeFrame,
+    after: afterFrame === Infinity ? null : afterFrame,
+  };
+};
+
+const getInterpolatedValues = (frameData, currentFrame) => {
+  if (!frameData) return null;
+
+  const { before, after } = findNearestKeyframes(frameData, currentFrame);
+
+  if (before === null && after === null) return null;
+  if (after === null) return frameData[before];
+  if (before === null) return frameData[after];
+
+  const t = (currentFrame - before) / (after - before);
+
+  return {
+    position: lerp(frameData[before].position, frameData[after].position, t),
+  };
+};
+
 const Scene = () => {
+  const [currentFrame, setCurrentFrame] = useState(0);
+
   return (
     <div className="absolute inset-0">
       <Canvas camera={{ position: [5, 5, 5], fov: 50 }}>
@@ -99,33 +150,59 @@ const Scene = () => {
         <directionalLight position={[5, 5, 5]} />
         <OrbitControls makeDefault />
         <ModelObject
-          key={1740300459422}
+          key={1740306060409}
           shape={{
-            position: [0, 0, 0],
+            position: [
+              2.3232270536099033, 4.239247749388153, 2.5510654676280438,
+            ],
             rotation: [0, 0, 0],
             color: "#888888",
-            scale: 0.6,
-            id: 1740300459422,
-            type: "car",
-            icon: "🚗",
+            scale: 1,
+            id: 1740306060409,
+            type: "sphere",
+            icon: "○",
           }}
-          animationStates={{
-            1740300459422: { floating: true, hovering: true },
+          animationStates={{}}
+          animationData={{
+            0: { position: [0, 0, 0], rotation: [0, 0, 0], scale: 1 },
+            26: {
+              position: [
+                -3.4528893700226675, 0.901823902394702, 2.5510654676280438,
+              ],
+            },
+            43: {
+              position: [
+                2.3232270536099033, 4.239247749388153, 2.5510654676280438,
+              ],
+            },
           }}
+          setCurrentFrame={setCurrentFrame}
         >
           <mesh
-            position={[0, 0, 0]}
+            position={
+              getInterpolatedValues(
+                {
+                  0: { position: [0, 0, 0], rotation: [0, 0, 0], scale: 1 },
+                  26: {
+                    position: [
+                      -3.4528893700226675, 0.901823902394702,
+                      2.5510654676280438,
+                    ],
+                  },
+                  43: {
+                    position: [
+                      2.3232270536099033, 4.239247749388153, 2.5510654676280438,
+                    ],
+                  },
+                },
+                currentFrame
+              )?.position
+            }
             rotation={[0, 0, 0]}
-            scale={[0.6, 0.6, 0.6]}
+            scale={[1, 1, 1]}
           >
-            {" "}
-            <Model
-              modelPath="/models/car.glb"
-              position={[0, 0, 0]}
-              rotation={[0, 0, 0]}
-              scale={0.6}
-              defaultScale={0.1}
-            />
+            <sphereGeometry />
+            <meshStandardMaterial color="#888888" map={null} />
           </mesh>
         </ModelObject>
       </Canvas>

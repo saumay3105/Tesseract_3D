@@ -286,8 +286,8 @@ const ShapeControls = ({
         <mesh
           ref={meshRef}
           position={
-            // getInterpolatedValues(shapeAnimationData, currentFrame)?.position
-            shape.position
+            getInterpolatedValues(shapeAnimationData, currentFrame)?.position
+            // shape.position
           }
           scale={[finalScale, finalScale, finalScale]}
           rotation={shape.rotation}
