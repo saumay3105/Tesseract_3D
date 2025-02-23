@@ -24,7 +24,6 @@ const ExportPopup = ({ isOpen, onClose, onExport }) => {
     setTimeout(() => setExported(false), 2000);
   };
 
-  
   return (
     <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50">
       <div className="bg-[#1e2127] rounded-lg w-full max-w-md p-6 relative text-gray-200">
@@ -110,7 +109,7 @@ const analyzeShapeUsage = (shapes) => {
 const generateImports = () => {
   return `import React, { useState, Suspense, useRef, useEffect } from 'react';
   import { Canvas } from '@react-three/fiber';
-  import { OrbitControls, Text3D } from '@react-three/drei';
+  import { OrbitControls, Text3D, Stars, Sky, Cloud, Environment } from '@react-three/drei';
   import { useGLTF } from "@react-three/drei";
   import { useTexture } from "@react-three/drei";
   import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
@@ -211,10 +210,36 @@ const generateImportedModelComponent = (usedImportedModels) => {
   };`;
 };
 
+// Generate environment component
+const generateEnvironmentComponent = (environment, backgroundColor) => {
+  switch (environment) {
+    case "stars":
+      return `<Stars count={5000} depth={50} factor={4} saturation={0} fade speed={1} />`;
+    case "sky":
+      return `<Sky sunPosition={[0, 1, 0]} />`;
+    case "clouds":
+      return (
+        `<Cloud 
+          position={[0, 15, 0]}
+          opacity={0.7}
+          speed={0.4}
+          width={10}
+          depth={1.5}
+          segments={20}
+        />`
+      );
+    case "sunset":
+      return `<Environment preset="sunset" background blur={0.4} />`;
+    case "color":
+      return `<color attach="background" args={[${backgroundColor}]} />`;
+    default:
+      return null;
+  };
+};
+
 // Helper function to generate JSX for each shape
 const generateShapeJSX = (shape) => {
-  const { position, rotation, scale, color, type, texturePath, text, height } =
-    shape;
+  const { position, rotation, scale, color, type, texturePath, text, height } = shape;
   const pos = `[${position.join(", ")}]`;
   const rot = `[${rotation.join(", ")}]`;
 
@@ -267,6 +292,7 @@ const generateShapeJSX = (shape) => {
             <meshStandardMaterial color="${color}" map={${texture}} />
           </mesh>`;
 };
+
 const generateModelObject = () => {
   return `const ModelObject = ({
             children,
@@ -341,9 +367,8 @@ const addModel = (shape, animationStates) => {
 };
 
 // Main export function
-const exportScene = (shapes, animationStates) => {
-  const { usedGeometries, usedModels, usedImportedModels, basicShapes } =
-    analyzeShapeUsage(shapes);
+const exportScene = (shapes, animationStates, environment, backgroundColor) => {
+  const { usedGeometries, usedModels, usedImportedModels, basicShapes } = analyzeShapeUsage(shapes);
 
   const componentCode = `${generateImports()}
     
@@ -353,15 +378,19 @@ const exportScene = (shapes, animationStates) => {
   ${generateImportedModelComponent(usedImportedModels)}
   ${generateModelObject()}
 
-    
+
   const Scene = () => {
     return (
-      <div className="absolute inset-0">
+      <div className="absolute inset-0" style={{
+        background: ${environment === "color" ? `"${backgroundColor}"` : `"transparent"`}
+      }}>
       <Canvas camera={{ position: [5, 5, 5], fov: 50 }}>
         <ambientLight intensity={0.5} />
         <directionalLight position={[5, 5, 5]} />
         <OrbitControls makeDefault />
+          
           ${shapes.map((shape) => addModel(shape, animationStates))}
+          ${generateEnvironmentComponent(environment, backgroundColor)}
       </Canvas>
       </div>
     );
@@ -382,11 +411,11 @@ const exportScene = (shapes, animationStates) => {
 };
 
 // Export button component
-export const ExportButton = ({ shapes, animationStates }) => {
+export const ExportButton = ({ shapes, animationStates,environment, backgroundColor }) => {
   const [isPopupOpen, setIsPopupOpen] = useState(false);
 
   const handleExport = () => {
-    exportScene(shapes, animationStates);
+    exportScene(shapes, animationStates, environment, backgroundColor);
   };
 
   return (
