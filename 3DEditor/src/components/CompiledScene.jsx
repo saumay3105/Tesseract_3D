@@ -15,6 +15,154 @@ import { useLoader } from "@react-three/fiber";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 
+const ImportedModel = ({ shape }) => {
+  const modelRef = useRef();
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  // Cleanup function to dispose of resources
+  const cleanupModel = () => {
+    if (modelRef.current) {
+      modelRef.current.traverse((child) => {
+        if (child.isMesh) {
+          child.geometry.dispose();
+          child.material.dispose();
+        }
+      });
+    }
+  };
+
+  // Handle model download
+  const handleDownload = async () => {
+    try {
+      const response = await fetch(shape.downloadUrl);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = shape.name || "model" + "." + shape.modelType;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Error downloading model:", error);
+    }
+  };
+
+  // Effect to cleanup on unmount
+  useEffect(() => {
+    return () => {
+      cleanupModel();
+    };
+  }, []);
+
+  // Effect to handle model loading
+  useEffect(() => {
+    setIsLoaded(false);
+    const loadModel = async () => {
+      try {
+        let loadedModel;
+        switch (shape.modelType) {
+          case "glb":
+          case "gltf":
+            loadedModel = await new Promise((resolve, reject) => {
+              const loader = new GLTFLoader();
+              loader.load(
+                shape.modelUrl,
+                (gltf) => {
+                  modelRef.current = gltf.scene;
+                  resolve(gltf.scene);
+                },
+                undefined,
+                reject
+              );
+            });
+            break;
+          // Add similar cases for other model types if needed
+        }
+        setIsLoaded(true);
+      } catch (error) {
+        console.error("Error loading model:", error);
+      }
+    };
+
+    loadModel();
+  }, [shape.modelUrl, shape.modelType]);
+
+  if (!isLoaded) {
+    return (
+      <group>
+        <meshBasicMaterial color="gray" />
+      </group>
+    );
+  }
+
+  try {
+    switch (shape.modelType) {
+      case "glb":
+      case "gltf":
+        return (
+          <group>
+            <primitive object={modelRef.current} />
+            {shape.downloadUrl && (
+              <Text3D
+                position={[0, -1, 0]}
+                fontSize={0.2}
+                onClick={handleDownload}
+                style={{ cursor: "pointer" }}
+              >
+                Download Model
+                <meshStandardMaterial color="white" />
+              </Text3D>
+            )}
+          </group>
+        );
+      case "obj":
+        const objModel = useLoader(OBJLoader, shape.modelUrl);
+        return (
+          <group>
+            <primitive object={objModel} />
+            {shape.downloadUrl && (
+              <Text3D
+                position={[0, -1, 0]}
+                fontSize={0.2}
+                onClick={handleDownload}
+                style={{ cursor: "pointer" }}
+              >
+                Download Model
+                <meshStandardMaterial color="white" />
+              </Text3D>
+            )}
+          </group>
+        );
+      case "stl":
+        const geometry = useLoader(STLLoader, shape.modelUrl);
+        return (
+          <group>
+            <mesh geometry={geometry}>
+              <meshStandardMaterial color={shape.color} />
+            </mesh>
+            {shape.downloadUrl && (
+              <Text3D
+                position={[0, -1, 0]}
+                fontSize={0.2}
+                onClick={handleDownload}
+                style={{ cursor: "pointer" }}
+              >
+                Download Model
+                <meshStandardMaterial color="white" />
+              </Text3D>
+            )}
+          </group>
+        );
+      default:
+        return null;
+    }
+  } catch (error) {
+    console.error("Error loading model:", error);
+    return null;
+  }
+};
 const ModelObject = ({
   children,
   shape,

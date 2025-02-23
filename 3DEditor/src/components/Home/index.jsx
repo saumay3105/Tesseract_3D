@@ -13,7 +13,6 @@ const Home = () => {
   return (
     <div className="min-h-screen bg-[#0A0A0B] text-white relative overflow-hidden">
       <Suspense fallback={<LoadingSpinner />}>
-        {/* <Background3D /> */}
         <CompiledScene />
       </Suspense>
 

@@ -11,7 +11,92 @@ import React, { useState, Suspense, useRef, useEffect } from 'react';
   
   
   
-  
+  const ImportedModel = ({ shape }) => {
+    const handleDownload = async () => {
+      try {
+        const response = await fetch(shape.downloadUrl);
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        console.log("url" + url);
+        link.href = url;
+        link.download = shape.name || 'model' + '.' + shape.modelType;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      } catch (error) {
+        console.error("Error downloading model:", error);
+      }
+    };
+
+    try {
+      switch (shape.modelType) {
+        case "glb":
+        case "gltf":
+          const model = useLoader(GLTFLoader, shape.modelUrl);
+          return (
+            <group>
+              <primitive object={model.scene} />
+              {shape.downloadUrl && (
+                <Text3D
+                  position={[0, -1, 0]}
+                  fontSize={0.2}
+                  onClick={handleDownload}
+                  style={{ cursor: 'pointer' }}
+                >
+                  Download Model
+                  <meshStandardMaterial color="white" />
+                </Text3D>
+              )}
+            </group>
+          );
+        case "obj":
+          const objModel = useLoader(OBJLoader, shape.modelUrl);
+          return (
+            <group>
+              <primitive object={objModel} />
+              {shape.downloadUrl && (
+                <Text3D
+                  position={[0, -1, 0]}
+                  fontSize={0.2}
+                  onClick={handleDownload}
+                  style={{ cursor: 'pointer' }}
+                >
+                  Download Model
+                  <meshStandardMaterial color="white" />
+                </Text3D>
+              )}
+            </group>
+          );
+        case "stl":
+          const geometry = useLoader(STLLoader, shape.modelUrl);
+          return (
+            <group>
+              <mesh geometry={geometry}>
+                <meshStandardMaterial color={shape.color} />
+              </mesh>
+              {shape.downloadUrl && (
+                <Text3D
+                  position={[0, -1, 0]}
+                  fontSize={0.2}
+                  onClick={handleDownload}
+                  style={{ cursor: 'pointer' }}
+                >
+                  Download Model
+                  <meshStandardMaterial color="white" />
+                </Text3D>
+              )}
+            </group>
+          );
+        default:
+          return null;
+      }
+    } catch (error) {
+      console.error("Error loading model:", error);
+      return null;
+    }
+  };
   const ModelObject = ({
             children,
             shape,
@@ -82,14 +167,11 @@ import React, { useState, Suspense, useRef, useEffect } from 'react';
         <directionalLight position={[5, 5, 5]} />
         <OrbitControls makeDefault />
           <ModelObject
-              key={1740302164728}
-              shape={{"position":[0,0,0],"rotation":[0,0,0],"color":"#888888","scale":1,"id":1740302164728,"type":"sphere","icon":"○"}}
-              animationStates={{"1740302164728":{"floating":true}}}
+              key={1740310921548}
+              shape={{"position":[0,0,0],"rotation":[0,0,0],"color":"#888888","scale":1,"id":1740310921548,"type":"importedModel","modelUrl":"http://localhost:3000/download/1740310921529-925384581.glb","modelType":"glb","name":"dog.glb"}}
+              animationStates={{}}
             >
-            <mesh position={[0, 0, 0]} rotation={[0, 0, 0]} scale={[1, 1, 1]}>
-            <sphereGeometry />
-            <meshStandardMaterial color="#888888" map={null} />
-          </mesh>
+            <ImportedModel shape={{"position":[0,0,0],"rotation":[0,0,0],"color":"#888888","scale":1,"id":1740310921548,"type":"importedModel","modelUrl":"http://localhost:3000/download/1740310921529-925384581.glb","modelType":"glb","name":"dog.glb"}} />
             </ModelObject>
       </Canvas>
       </div>
