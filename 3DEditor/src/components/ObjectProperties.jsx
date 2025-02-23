@@ -128,7 +128,7 @@ const ObjectProperties = ({
                     value={position[axis]}
                     setValue={setPosition}
                     onChange={(value) => handlePositionChange(axis, value)}
-                    scaleFactor={0.01}
+                    scaleFactor={0.05}
                   />
                 </div>
               ))}

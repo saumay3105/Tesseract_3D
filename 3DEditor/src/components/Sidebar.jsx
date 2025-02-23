@@ -1,21 +1,21 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Library, Import, Play } from "lucide-react";
+import { ArrowLeft, Library, Import, Play, Type } from "lucide-react";
 import ObjectLibrary from "./ObjectLibrary";
 import SceneObjects from "./SceneObjects";
 import ModelImporter from "./ModelImporter";
 import AnimationToolbar from "./AnimationToolbar";
+import TextCreator from "./TextCreator";
 
-const TabButton = ({ active, onClick, children, icon: Icon }) => (
+const TabButton = ({ active, onClick, children }) => (
   <button
     onClick={onClick}
-    className={`flex items-center gap-2 w-full p-4 pl-0 text-xs font-medium transition-colors duration-200 border-l-4 ${
+    className={`flex items-center gap-2 w-full p-4 pl-2 justify-center text-xs font-medium transition-colors duration-200 border-l-4 ${
       active
         ? "bg-gray-800 border-blue-500 text-white"
         : "border-transparent text-gray-400 hover:text-white hover:bg-gray-800"
     }`}
   >
-    <Icon size={18} />
     {children}
   </button>
 );
@@ -56,6 +56,8 @@ const Sidebar = ({
         return <ObjectLibrary addShape={addShape} />;
       case "import":
         return <ModelImporter addShape={addShape} />;
+      case "text":
+        return <TextCreator addShape={addShape} />;
       case "animations":
         return selectedObject ? (
           <AnimationToolbar
@@ -87,23 +89,26 @@ const Sidebar = ({
         <TabButton
           active={activeTab === "library"}
           onClick={() => setActiveTab("library")}
-          icon={Library}
         >
-          Library
+         Library
         </TabButton>
         <TabButton
           active={activeTab === "import"}
           onClick={() => setActiveTab("import")}
-          icon={Import}
         >
           Import
         </TabButton>
         <TabButton
           active={activeTab === "animations"}
           onClick={() => setActiveTab("animations")}
-          icon={Play}
         >
           Animate
+        </TabButton>
+        <TabButton
+          active={activeTab === "text"}
+          onClick={() => setActiveTab("text")}
+        >
+          Text
         </TabButton>
       </div>
 
