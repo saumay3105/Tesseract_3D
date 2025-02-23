@@ -28,7 +28,7 @@ const analyzeShapeUsage = (shapes) => {
 const generateImports = (usedGeometries, basicShapes) => {
   return `import React, { useState, Suspense, useRef, useEffect } from 'react';
   import { Canvas } from '@react-three/fiber';
-  import { OrbitControls } from '@react-three/drei';
+  import { OrbitControls, Text3D } from '@react-three/drei';
   import { useGLTF } from "@react-three/drei";
   import { useTexture } from "@react-three/drei";
   import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
@@ -132,7 +132,8 @@ const generateImportedModelComponent = (usedImportedModels) => {
 
 // Helper function to generate JSX for each shape
 const generateShapeJSX = (shape) => {
-  const { position, rotation, scale, color, type, texturePath } = shape;
+  const { position, rotation, scale, color, type, texturePath, text, height } =
+    shape;
   const pos = `[${position.join(", ")}]`;
   const rot = `[${rotation.join(", ")}]`;
 
@@ -161,12 +162,30 @@ const generateShapeJSX = (shape) => {
               </mesh>`;
   }
 
+  if (type === "ThreeDText") {
+    return `${jsx}
+            <Text3D
+              font="/fonts/helvetiker_regular.typeface.json"
+              size={${scale}}
+              height={${height || 0.2}}
+              curveSegments={12}
+              bevelEnabled={true}
+              bevelThickness={0.01}
+              bevelSize={0.02}
+              bevelOffset={0}
+              bevelSegments={5}
+            >
+              ${text}
+              <meshStandardMaterial color="${color}" />
+            </Text3D>
+          </mesh>`;
+  }
+
   return `${jsx}
             <${type === "cube" ? "box" : type}Geometry />
             <meshStandardMaterial color="${color}" map={${texture}} />
           </mesh>`;
 };
-
 const generateModelObject = () => {
   return `const ModelObject = ({
             children,
@@ -212,6 +231,7 @@ const generateModelObject = () => {
             return <mesh ref={meshRef}>{children}</mesh>;
           };`;
 };
+
 const addModel = (shape, animationStates) => {
   return `<ModelObject
               key={${shape.id}}
@@ -222,7 +242,6 @@ const addModel = (shape, animationStates) => {
             </ModelObject>`;
 };
 
-// Main export function
 export const exportScene = (shapes, animationStates, modelConfigs) => {
   const { usedGeometries, usedModels, usedImportedModels, basicShapes } =
     analyzeShapeUsage(shapes);

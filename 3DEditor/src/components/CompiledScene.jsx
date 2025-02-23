@@ -1,6 +1,6 @@
 import React, { useState, Suspense, useRef, useEffect } from "react";
 import { Canvas } from "@react-three/fiber";
-import { OrbitControls } from "@react-three/drei";
+import { OrbitControls, Text3D } from "@react-three/drei";
 import { useGLTF } from "@react-three/drei";
 import { useTexture } from "@react-three/drei";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
@@ -60,50 +60,41 @@ const Scene = () => {
         <directionalLight position={[5, 5, 5]} />
         <OrbitControls makeDefault />
         <ModelObject
-          key={1740294407266}
+          key={1740300992340}
           shape={{
-            id: 1740294407266,
-            type: "sphere",
-            icon: "○",
             position: [0, 0, 0],
             rotation: [0, 0, 0],
-            color: "#888888",
-            scale: 1,
+            color: "#662e2e",
+            scale: 1.3,
+            type: "ThreeDText",
+            text: "miran",
+            height: 0.3,
+            icon: "📝",
+            id: 1740300992340,
           }}
           animationStates={{
-            1740294407266: { bouncing: true },
-            1740295501840: { rotating: true },
-          }}
-        >
-          <mesh position={[0, 0, 0]} rotation={[0, 0, 0]} scale={[1, 1, 1]}>
-            <sphereGeometry />
-            <meshStandardMaterial color="#888888" map={null} />
-          </mesh>
-        </ModelObject>
-        ,
-        <ModelObject
-          key={1740295501840}
-          shape={{
-            id: 1740295501840,
-            type: "cube",
-            icon: "⧈",
-            position: [0, 1.94, 0],
-            rotation: [1.9547687622336491, 0, 0],
-            color: "#888888",
-            scale: 1,
-          }}
-          animationStates={{
-            1740294407266: { bouncing: true },
-            1740295501840: { rotating: true },
+            1740300992340: { hovering: false, bouncing: true },
           }}
         >
           <mesh
-            position={[0, 1.94, 0]}
-            rotation={[1.9547687622336491, 0, 0]}
-            scale={[1, 1, 1]}
+            position={[0, 0, 0]}
+            rotation={[0, 0, 0]}
+            scale={[1.3, 1.3, 1.3]}
           >
-            <boxGeometry />
-            <meshStandardMaterial color="#888888" map={null} />
+            <Text3D
+              font="/fonts/helvetiker_regular.typeface.json"
+              size={1.3}
+              height={0.3}
+              curveSegments={12}
+              bevelEnabled={true}
+              bevelThickness={0.01}
+              bevelSize={0.02}
+              bevelOffset={0}
+              bevelSegments={5}
+            >
+              miran
+              <meshStandardMaterial color="#662e2e" />
+            </Text3D>
           </mesh>
         </ModelObject>
       </Canvas>
