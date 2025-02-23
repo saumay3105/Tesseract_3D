@@ -1,31 +1,38 @@
-## Contributing
+
+## 🤝 Contributing
 
 We welcome contributions to Tesseract3D! Here's how you can help:
 
-1. **Fork the Repository**
-   - Create a fork of this repository
-   - Clone your fork locally
+### 1️⃣ Fork the Repository
+- Create a fork of this repository
+- Clone your fork locally
 
-2. **Set Up Development Environment**
-  ```bash
-  cd 3DEditor
-  npm install
-  ```
+### 2️⃣ Set Up Development Environment
+```bash
+cd 3DEditor
+npm install
+```
 
-3. **Create a Branch**
-   ```bash
-   git checkout -b feature/your-feature-name
-   ```
+Navigate to the backend directory and install dependencies:
+```bash
+cd backend
+npm install
+```
 
-4. **Make Your Changes**
-   - Write clean, documented code
-   - Follow our coding standards
-   - Add tests where necessary
+### 3️⃣ Create a Branch
+```bash
+git checkout -b feature/your-feature-name
+```
 
-5. **Submit a Pull Request**
-   - Push your changes to your fork
-   - Create a pull request with a clear description
-   - Reference any relevant issues
+### 4️⃣ Make Your Changes
+- Write clean, documented code
+- Follow our coding standards
+- Add tests where necessary
+
+### 5️⃣ Submit a Pull Request
+- Push your changes to your fork
+- Create a pull request with a clear description
+- Reference any relevant issues
 
 ### Development Guidelines
 
