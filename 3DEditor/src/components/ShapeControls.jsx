@@ -171,7 +171,6 @@ const ShapeControls = ({
     if (transformRef.current) {
       const controls = transformRef.current;
 
-      // Only handle position updates when dragging ends
       const handleDraggingChanged = (event) => {
         if (!event.value) {
           // When dragging stops
@@ -182,14 +181,16 @@ const ShapeControls = ({
               meshRef.current.position.z,
             ];
 
-            updateObject({
-              position: newPosition,
-            });
+            // Force a timeout to ensure state update occurs after all other updates
+            setTimeout(() => {
+              updateObject({
+                position: newPosition,
+              });
+            }, 0);
           }
         }
       };
 
-      // Listen only for drag end events
       controls.addEventListener("dragging-changed", handleDraggingChanged);
 
       return () => {
