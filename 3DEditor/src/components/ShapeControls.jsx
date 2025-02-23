@@ -23,38 +23,6 @@ import {
 import modelConfigs from "./modelConfigs.json";
 import * as THREE from "three";
 
-const useHoverAnimation = (
-  ref,
-  animationStates,
-  shapeId,
-  config = { rotationX: 0.2, rotationY: 0.5, lerpSpeed: 0.1 }
-) => {
-  useFrame((state) => {
-    if (
-      !ref.current ||
-      !animationStates ||
-      !animationStates[shapeId] ||
-      !animationStates[shapeId].hovering
-    ) {
-      return;
-    }
-
-    const { mouse } = state;
-
-    ref.current.rotation.y = THREE.MathUtils.lerp(
-      ref.current.rotation.y,
-      mouse.x * config.rotationY,
-      config.lerpSpeed
-    );
-
-    ref.current.rotation.x = THREE.MathUtils.lerp(
-      ref.current.rotation.x,
-      mouse.y * config.rotationX,
-      config.lerpSpeed
-    );
-  });
-};
-
 const Model = ({ modelId, isSelected }) => {
   const gltf = useGLTF(modelConfigs[modelId].path);
   const scene = gltf.scene.clone();
@@ -165,13 +133,10 @@ const ShapeControls = ({
   const [offset] = useState(Math.random() * Math.PI * 2);
   const initialPosition = shape.position;
 
-  useHoverAnimation(meshRef, animationStates, shape.id);
-
   useEffect(() => {
     if (transformRef.current) {
       const controls = transformRef.current;
 
-      // Only handle position updates when dragging ends
       const handleDraggingChanged = (event) => {
         if (!event.value) {
           // When dragging stops
@@ -182,14 +147,16 @@ const ShapeControls = ({
               meshRef.current.position.z,
             ];
 
-            updateObject({
-              position: newPosition,
-            });
+            // Force a timeout to ensure state update occurs after all other updates
+            setTimeout(() => {
+              updateObject({
+                position: newPosition,
+              });
+            }, 0);
           }
         }
       };
 
-      // Listen only for drag end events
       controls.addEventListener("dragging-changed", handleDraggingChanged);
 
       return () => {
@@ -205,7 +172,7 @@ const ShapeControls = ({
     }
   }, [shape]);
 
-  useFrame(({ clock }) => {
+  useFrame(({ clock, mouse }) => {
     if (!meshRef.current || !animationStates[shape.id]) return;
 
     const animations = animationStates[shape.id];
@@ -214,7 +181,21 @@ const ShapeControls = ({
       : [0, 0, 0];
     let newPosition = [...basePosition];
     let newScale = shape.scale || 1;
+    const config = { rotationX: 0.2, rotationY: 0.5, lerpSpeed: 0.1 };
 
+    if (animations?.hovering) {
+      meshRef.current.rotation.y = THREE.MathUtils.lerp(
+        meshRef.current.rotation.y,
+        mouse.x * (config.rotationY || 0.5),
+        config.lerpSpeed || 0.1
+      );
+
+      meshRef.current.rotation.x = THREE.MathUtils.lerp(
+        meshRef.current.rotation.x,
+        mouse.y * (config.rotationX || 0.2),
+        config.lerpSpeed || 0.1
+      );
+    }
     if (animations?.rotating) {
       meshRef.current.rotation.y += 0.02;
     }
