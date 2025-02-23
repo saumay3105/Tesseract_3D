@@ -22,6 +22,7 @@ import {
 } from "./geometries";
 import modelConfigs from "./modelConfigs.json";
 import * as THREE from "three";
+import { Text3D } from "@react-three/drei";
 
 const Model = ({ modelId, isSelected }) => {
   const gltf = useGLTF(modelConfigs[modelId].path);
@@ -344,6 +345,28 @@ const ShapeControls = ({
               )}
               {shape.type === "wall" && (
                 <primitive object={createWallGeometry()} />
+              )}
+              {shape.type === "ThreeDText" && (
+                <Text3D
+                  font="/fonts/helvetiker_regular.typeface.json"
+                  size={1}
+                  height={shape.height || 0.2}
+                  curveSegments={12}
+                  bevelEnabled={true}
+                  bevelThickness={0.01}
+                  bevelSize={0.02}
+                  bevelOffset={0}
+                  bevelSegments={5}
+                >
+                  {shape.text}
+                  <meshStandardMaterial
+                    color={isSelected ? "yellow" : shape.color}
+                    emissive={isSelected ? "orange" : "black"}
+                    emissiveIntensity={isSelected ? 1 : 0}
+                    transparent={true}
+                    opacity={isSelected ? 0.5 : 1}
+                  />
+                </Text3D>
               )}
 
               <meshStandardMaterial

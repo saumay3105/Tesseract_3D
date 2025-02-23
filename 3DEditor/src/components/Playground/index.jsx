@@ -82,6 +82,8 @@ const Playground = () => {
   const [currentFrame, setCurrentFrame] = useState(0);
   const [animationData, setAnimationData] = useState({});
   const [pendingSelection, setPendingSelection] = useState(null);
+  const [environment, setEnvironment] = useState("none");
+  const [backgroundColor, setBackgroundColor] = useState("#000000");
 
   useEffect(() => {
     if (pendingSelection) {
@@ -249,6 +251,10 @@ const Playground = () => {
           updateObject={updateObject}
           animationData={animationData}
           animationStates={animationStates}
+          environment={environment}
+          setEnvironment={setEnvironment}
+          backgroundColor={backgroundColor}
+          setBackgroundColor={setBackgroundColor}
         />
         <ObjectProperties
           shapes={shapes}
@@ -259,6 +265,10 @@ const Playground = () => {
           deleteShape={deleteShape}
           undo={undo}
           unselect={unselect}
+          environment={environment}
+          setEnvironment={setEnvironment}
+          backgroundColor={backgroundColor}
+          setBackgroundColor={setBackgroundColor}
         />
       </div>
     </div>

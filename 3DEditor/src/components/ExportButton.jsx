@@ -1,6 +1,97 @@
 import { useEffect } from "react";
+import React, { useState } from "react";
+import { Copy, CheckCircle2, X } from "lucide-react";
 import { geometryDefinitions } from "./geometryDefinition";
 import modelConfigs from "./modelConfigs.json";
+
+// Export Popup Component
+const ExportPopup = ({ isOpen, onClose, onExport }) => {
+  const [copied, setCopied] = useState(false);
+  const [exported, setExported] = useState(false);
+
+  if (!isOpen) return null;
+
+  const installCommand = `npm install @react-three/fiber @react-three/drei three`;
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(installCommand);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleExport = () => {
+    onExport();
+    setExported(true);
+    setTimeout(() => setExported(false), 2000);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50">
+      <div className="bg-[#1e2127] rounded-lg w-full max-w-md p-6 relative text-gray-200">
+        <button
+          onClick={onClose}
+          className="absolute right-4 top-4 text-gray-400 hover:text-gray-200"
+        >
+          <X className="w-5 h-5" />
+        </button>
+
+        <h2 className="text-xl font-semibold mb-4 text-white">Export Scene</h2>
+        <p className="text-gray-400 mb-6">
+          Follow these steps to use your exported scene in your React project
+        </p>
+
+        <div className="space-y-6">
+          <div>
+            <h3 className="font-medium mb-2 text-white">
+              1. Install Required Dependencies
+            </h3>
+            <div className="flex items-center gap-2 bg-[#282c34] p-3 rounded-md">
+              <code className="text-sm flex-1 text-gray-300">
+                {installCommand}
+              </code>
+              <button
+                onClick={handleCopy}
+                className="p-2 hover:bg-[#363b44] rounded-md transition-colors"
+              >
+                {copied ? (
+                  <CheckCircle2 className="w-4 h-4 text-green-500" />
+                ) : (
+                  <Copy className="w-4 h-4 text-gray-400" />
+                )}
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <h3 className="font-medium mb-2 text-white">
+              2. Export Scene File
+            </h3>
+            <button
+              onClick={handleExport}
+              className="w-full bg-[#6069fa] text-white py-2 px-4 rounded-md hover:bg-[#4c56f8] transition-colors"
+            >
+              {exported ? "Exported!" : "Export CompiledScene.jsx"}
+            </button>
+          </div>
+
+          <div>
+            <h3 className="font-medium mb-2 text-white">
+              3. Usage Instructions
+            </h3>
+            <div className="bg-[#282c34] p-4 rounded-md">
+              <p className="text-sm text-gray-400 mb-2">
+                Import and use the scene component in your React application:
+              </p>
+              <pre className="bg-[#1e2127] p-3 rounded-md text-sm text-gray-300">
+                {`import Scene from './CompiledScene';\n\nfunction App() {\n  return <Scene />;\n}`}
+              </pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 // Function to analyze which geometries and models are used
 const analyzeShapeUsage = (shapes) => {
@@ -28,7 +119,7 @@ const analyzeShapeUsage = (shapes) => {
 const generateImports = () => {
   return `import React, { useState, Suspense, useRef, useEffect } from 'react';
   import { Canvas } from '@react-three/fiber';
-  import { OrbitControls } from '@react-three/drei';
+  import { OrbitControls, Text3D, Stars, Sky, Cloud, Environment } from '@react-three/drei';
   import { useGLTF } from "@react-three/drei";
   import { useTexture } from "@react-three/drei";
   import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
@@ -44,7 +135,7 @@ const generateGeometryFunctions = (usedGeometries) => {
     .join("\n\n");
 };
 
-// Generate the CustomGeometry component only if needed
+// Generate the CustomGeometry component
 const generateCustomGeometryComponent = (usedGeometries) => {
   if (usedGeometries.size === 0) return "";
 
@@ -100,6 +191,7 @@ const generateModelComponent = (usedModels) => {
     };`;
 };
 
+// Generate imported model component
 const generateImportedModelComponent = (usedImportedModels) => {
   if (usedImportedModels.size === 0) return "";
 
@@ -201,9 +293,35 @@ const generateCustomAnimationFunctions = () => {
   };`;
 };
 
+// Generate environment component
+const generateEnvironmentComponent = (environment, backgroundColor) => {
+  switch (environment) {
+    case "stars":
+      return `<Stars count={5000} depth={50} factor={4} saturation={0} fade speed={1} />`;
+    case "sky":
+      return `<Sky sunPosition={[0, 1, 0]} />`;
+    case "clouds":
+      return `<Cloud 
+          position={[0, 15, 0]}
+          opacity={0.7}
+          speed={0.4}
+          width={10}
+          depth={1.5}
+          segments={20}
+        />`;
+    case "sunset":
+      return `<Environment preset="sunset" background blur={0.4} />`;
+    case "color":
+      return `<color attach="background" args={[${backgroundColor}]} />`;
+    default:
+      return null;
+  }
+};
+
 // Helper function to generate JSX for each shape
-const generateShapeJSX = (shape, shapeAnimationData) => {
-  const { position, rotation, scale, color, type, texturePath } = shape;
+const generateShapeJSX = (shape) => {
+  const { position, rotation, scale, color, type, texturePath, text, height } =
+    shape;
   const pos = `[${position.join(", ")}]`;
   const rot = `[${rotation.join(", ")}]`;
 
@@ -236,6 +354,25 @@ const generateShapeJSX = (shape, shapeAnimationData) => {
                 <meshStandardMaterial color="${color}" />
               </CustomGeometry>
               </mesh>`;
+  }
+
+  if (type === "ThreeDText") {
+    return `${jsx}
+            <Text3D
+              font="/fonts/helvetiker_regular.typeface.json"
+              size={${scale}}
+              height={${height || 0.2}}
+              curveSegments={12}
+              bevelEnabled={true}
+              bevelThickness={0.01}
+              bevelSize={0.02}
+              bevelOffset={0}
+              bevelSegments={5}
+            >
+              ${text}
+              <meshStandardMaterial color="${color}" />
+            </Text3D>
+          </mesh>`;
   }
 
   return `${jsx}
@@ -322,7 +459,13 @@ const addModel = (shape, animationStates, animationData) => {
 };
 
 // Main export function
-export const exportScene = (shapes, animationStates, animationData) => {
+export const exportScene = (
+  shapes,
+  animationStates,
+  environment,
+  backgroundColor,
+  animationData
+) => {
   const { usedGeometries, usedModels, usedImportedModels, basicShapes } =
     analyzeShapeUsage(shapes);
 
@@ -339,7 +482,11 @@ export const exportScene = (shapes, animationStates, animationData) => {
     const [currentFrame, setCurrentFrame] = useState(0);
 
     return (
-      <div className="absolute inset-0">
+      <div className="absolute inset-0" style={{
+        background: ${
+          environment === "color" ? `"${backgroundColor}"` : `"transparent"`
+        }
+      }}>
       <Canvas camera={{ position: [5, 5, 5], fov: 50 }}>
         <ambientLight intensity={0.5} />
         <directionalLight position={[5, 5, 5]} />
@@ -347,6 +494,7 @@ export const exportScene = (shapes, animationStates, animationData) => {
           ${shapes.map((shape) =>
             addModel(shape, animationStates, animationData)
           )}
+          ${generateEnvironmentComponent(environment, backgroundColor)}
       </Canvas>
       </div>
     );
@@ -367,21 +515,46 @@ export const exportScene = (shapes, animationStates, animationData) => {
 };
 
 // Export button component
-export const ExportButton = ({ shapes, animationStates, animationData }) => {
+export const ExportButton = ({
+  shapes,
+  animationStates,
+  animationData,
+  environment,
+  backgroundColor,
+}) => {
+  const [isPopupOpen, setIsPopupOpen] = useState(false);
+
+  const handleExport = () => {
+    exportScene(shapes, animationStates, environment, backgroundColor);
+  };
+
   return (
-    <button
-      onClick={() => exportScene(shapes, animationStates, animationData)}
-      style={{
-        padding: "10px 20px",
-        backgroundColor: "#4CAF50",
-        color: "white",
-        border: "none",
-        borderRadius: "4px",
-        cursor: "pointer",
-        fontSize: "16px",
-      }}
-    >
-      Export Scene
-    </button>
+    <>
+      <button
+        onClick={() => setIsPopupOpen(true)}
+        className="px-5 py-2.5 bg-[#6069fa] text-white rounded-md hover:bg-[#4c56f8] transition-colors font-medium"
+      >
+        Export Scene
+      </button>
+      <button
+        onClick={() => exportScene(shapes, animationStates, animationData)}
+        style={{
+          padding: "10px 20px",
+          backgroundColor: "#4CAF50",
+          color: "white",
+          border: "none",
+          borderRadius: "4px",
+          cursor: "pointer",
+          fontSize: "16px",
+        }}
+      >
+        Export Scene
+      </button>
+      <ExportPopup
+        isOpen={isPopupOpen}
+        onClose={() => setIsPopupOpen(false)}
+        onExport={handleExport}
+      />
+    </>
   );
 };

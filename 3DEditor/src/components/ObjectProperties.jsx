@@ -11,6 +11,10 @@ const ObjectProperties = ({
   deleteShape,
   undo,
   unselect,
+  backgroundColor,
+  setBackgroundColor,
+  environment,
+  setEnvironment,
 }) => {
   const [position, setPosition] = useState({ x: 0, y: 0, z: 0 });
   const [rotation, setRotation] = useState({ x: 0, y: 0 });
@@ -99,6 +103,8 @@ const ObjectProperties = ({
         shapes={shapes}
         animationStates={animationStates}
         animationData={animationData}
+        environment={environment}
+        backgroundColor={backgroundColor}
       />
       <h3 className="text-sm font-semibold mb-4">Modify Object:</h3>
 
@@ -133,7 +139,7 @@ const ObjectProperties = ({
                     value={position[axis]}
                     setValue={setPosition}
                     onChange={(value) => handlePositionChange(axis, value)}
-                    scaleFactor={0.01}
+                    scaleFactor={0.05}
                   />
                 </div>
               ))}
