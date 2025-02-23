@@ -15,6 +15,25 @@ const ObjectProperties = ({
   const [scale, setScale] = useState(1);
 
   useEffect(() => {
+    const updatedPosition = shapes.filter(
+      (shape) => shape.id === selectedObject?.id
+    )[0]?.position;
+    if (updatedPosition) {
+      // console.log("updatedPosition", updatedPosition);
+      setPosition({
+        x: updatedPosition[0],
+        y: updatedPosition[1],
+        z: updatedPosition[2],
+      });
+    }
+  }, [shapes]);
+
+  useEffect(() => {
+    console.log(position);
+    console.log("position");
+  }, [position]);
+
+  useEffect(() => {
     if (
       selectedObject &&
       Array.isArray(selectedObject.position) &&
@@ -70,7 +89,7 @@ const ObjectProperties = ({
   };
 
   return (
-    <div className="absolute top-5 right-2 bg-gray-800 p-4 rounded-lg shadow-lg text-white w-64">
+    <div className="absolute top-5 right-2 bg-gray-800 p-4 rounded-lg shadow-lg text-white w-64 mr-">
       <button
         className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded mr-2 mb-2"
         onClick={undo}
@@ -107,7 +126,10 @@ const ObjectProperties = ({
                   </label>
                   <DraggableInput
                     defaultValue={position[axis]}
+                    value={position[axis]}
+                    setValue={setPosition}
                     onChange={(value) => handlePositionChange(axis, value)}
+                    scaleFactor={0.01}
                   />
                 </div>
               ))}
