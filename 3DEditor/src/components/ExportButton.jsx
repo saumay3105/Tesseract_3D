@@ -1,5 +1,88 @@
+import React, { useState } from 'react';
+import { Copy, CheckCircle2, X } from 'lucide-react';
 import { geometryDefinitions } from "./geometryDefinition";
 import modelConfigs from "./modelConfigs.json";
+
+// Export Popup Component
+const ExportPopup = ({ isOpen, onClose, onExport }) => {
+  const [copied, setCopied] = useState(false);
+  const [exported, setExported] = useState(false);
+
+  if (!isOpen) return null;
+
+  const installCommand = `npm install @react-three/fiber @react-three/drei three`;
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(installCommand);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleExport = () => {
+    onExport();
+    setExported(true);
+    setTimeout(() => setExported(false), 2000);
+  };
+
+  
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50">
+      <div className="bg-[#1e2127] rounded-lg w-full max-w-md p-6 relative text-gray-200">
+        <button 
+          onClick={onClose}
+          className="absolute right-4 top-4 text-gray-400 hover:text-gray-200"
+        >
+          <X className="w-5 h-5" />
+        </button>
+
+        <h2 className="text-xl font-semibold mb-4 text-white">Export Scene</h2>
+        <p className="text-gray-400 mb-6">
+          Follow these steps to use your exported scene in your React project
+        </p>
+
+        <div className="space-y-6">
+          <div>
+            <h3 className="font-medium mb-2 text-white">1. Install Required Dependencies</h3>
+            <div className="flex items-center gap-2 bg-[#282c34] p-3 rounded-md">
+              <code className="text-sm flex-1 text-gray-300">{installCommand}</code>
+              <button
+                onClick={handleCopy}
+                className="p-2 hover:bg-[#363b44] rounded-md transition-colors"
+              >
+                {copied ? 
+                  <CheckCircle2 className="w-4 h-4 text-green-500" /> : 
+                  <Copy className="w-4 h-4 text-gray-400" />
+                }
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <h3 className="font-medium mb-2 text-white">2. Export Scene File</h3>
+            <button
+              onClick={handleExport}
+              className="w-full bg-[#6069fa] text-white py-2 px-4 rounded-md hover:bg-[#4c56f8] transition-colors"
+            >
+              {exported ? 'Exported!' : 'Export CompiledScene.jsx'}
+            </button>
+          </div>
+
+          <div>
+            <h3 className="font-medium mb-2 text-white">3. Usage Instructions</h3>
+            <div className="bg-[#282c34] p-4 rounded-md">
+              <p className="text-sm text-gray-400 mb-2">
+                Import and use the scene component in your React application:
+              </p>
+              <pre className="bg-[#1e2127] p-3 rounded-md text-sm text-gray-300">
+                {`import Scene from './CompiledScene';\n\nfunction App() {\n  return <Scene />;\n}`}
+              </pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 // Function to analyze which geometries and models are used
 const analyzeShapeUsage = (shapes) => {
@@ -43,16 +126,14 @@ const generateGeometryFunctions = (usedGeometries) => {
     .join("\n\n");
 };
 
-// Generate the CustomGeometry component only if needed
+// Generate the CustomGeometry component
 const generateCustomGeometryComponent = (usedGeometries) => {
   if (usedGeometries.size === 0) return "";
 
   const geometrySwitch = Array.from(usedGeometries)
     .map(
       (type) => `      case '${type}':
-          geometry = create${
-            type.charAt(0).toUpperCase() + type.slice(1)
-          }Geometry();
+          geometry = create${type.charAt(0).toUpperCase() + type.slice(1)}Geometry();
           break;`
     )
     .join("\n");
@@ -99,6 +180,7 @@ const generateModelComponent = (usedModels) => {
     };`;
 };
 
+// Generate imported model component
 const generateImportedModelComponent = (usedImportedModels) => {
   if (usedImportedModels.size === 0) return "";
 
@@ -258,7 +340,8 @@ const addModel = (shape, animationStates) => {
             </ModelObject>`;
 };
 
-export const exportScene = (shapes, animationStates, modelConfigs) => {
+// Main export function
+const exportScene = (shapes, animationStates) => {
   const { usedGeometries, usedModels, usedImportedModels, basicShapes } =
     analyzeShapeUsage(shapes);
 
@@ -300,20 +383,26 @@ export const exportScene = (shapes, animationStates, modelConfigs) => {
 
 // Export button component
 export const ExportButton = ({ shapes, animationStates }) => {
+  const [isPopupOpen, setIsPopupOpen] = useState(false);
+
+  const handleExport = () => {
+    exportScene(shapes, animationStates);
+  };
+
   return (
-    <button
-      onClick={() => exportScene(shapes, animationStates)}
-      style={{
-        padding: "10px 20px",
-        backgroundColor: "#4CAF50",
-        color: "white",
-        border: "none",
-        borderRadius: "4px",
-        cursor: "pointer",
-        fontSize: "16px",
-      }}
-    >
-      Export Scene
-    </button>
+    <>
+      <button
+        onClick={() => setIsPopupOpen(true)}
+        className="px-5 py-2.5 bg-[#6069fa] text-white rounded-md hover:bg-[#4c56f8] transition-colors font-medium"
+      >
+        Export Scene
+      </button>
+      
+      <ExportPopup 
+        isOpen={isPopupOpen}
+        onClose={() => setIsPopupOpen(false)}
+        onExport={handleExport}
+      />
+    </>
   );
 };
