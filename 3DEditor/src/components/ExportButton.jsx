@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { Copy, CheckCircle2, X } from 'lucide-react';
+import { useEffect } from "react";
+import React, { useState } from "react";
+import { Copy, CheckCircle2, X } from "lucide-react";
 import { geometryDefinitions } from "./geometryDefinition";
 import modelConfigs from "./modelConfigs.json";
 
@@ -27,7 +28,7 @@ const ExportPopup = ({ isOpen, onClose, onExport }) => {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50">
       <div className="bg-[#1e2127] rounded-lg w-full max-w-md p-6 relative text-gray-200">
-        <button 
+        <button
           onClick={onClose}
           className="absolute right-4 top-4 text-gray-400 hover:text-gray-200"
         >
@@ -41,33 +42,42 @@ const ExportPopup = ({ isOpen, onClose, onExport }) => {
 
         <div className="space-y-6">
           <div>
-            <h3 className="font-medium mb-2 text-white">1. Install Required Dependencies</h3>
+            <h3 className="font-medium mb-2 text-white">
+              1. Install Required Dependencies
+            </h3>
             <div className="flex items-center gap-2 bg-[#282c34] p-3 rounded-md">
-              <code className="text-sm flex-1 text-gray-300">{installCommand}</code>
+              <code className="text-sm flex-1 text-gray-300">
+                {installCommand}
+              </code>
               <button
                 onClick={handleCopy}
                 className="p-2 hover:bg-[#363b44] rounded-md transition-colors"
               >
-                {copied ? 
-                  <CheckCircle2 className="w-4 h-4 text-green-500" /> : 
+                {copied ? (
+                  <CheckCircle2 className="w-4 h-4 text-green-500" />
+                ) : (
                   <Copy className="w-4 h-4 text-gray-400" />
-                }
+                )}
               </button>
             </div>
           </div>
 
           <div>
-            <h3 className="font-medium mb-2 text-white">2. Export Scene File</h3>
+            <h3 className="font-medium mb-2 text-white">
+              2. Export Scene File
+            </h3>
             <button
               onClick={handleExport}
               className="w-full bg-[#6069fa] text-white py-2 px-4 rounded-md hover:bg-[#4c56f8] transition-colors"
             >
-              {exported ? 'Exported!' : 'Export CompiledScene.jsx'}
+              {exported ? "Exported!" : "Export CompiledScene.jsx"}
             </button>
           </div>
 
           <div>
-            <h3 className="font-medium mb-2 text-white">3. Usage Instructions</h3>
+            <h3 className="font-medium mb-2 text-white">
+              3. Usage Instructions
+            </h3>
             <div className="bg-[#282c34] p-4 rounded-md">
               <p className="text-sm text-gray-400 mb-2">
                 Import and use the scene component in your React application:
@@ -132,7 +142,9 @@ const generateCustomGeometryComponent = (usedGeometries) => {
   const geometrySwitch = Array.from(usedGeometries)
     .map(
       (type) => `      case '${type}':
-          geometry = create${type.charAt(0).toUpperCase() + type.slice(1)}Geometry();
+          geometry = create${
+            type.charAt(0).toUpperCase() + type.slice(1)
+          }Geometry();
           break;`
     )
     .join("\n");
@@ -184,21 +196,140 @@ const generateImportedModelComponent = (usedImportedModels) => {
   if (usedImportedModels.size === 0) return "";
 
   return `const ImportedModel = ({ shape }) => {
+    const modelRef = useRef();
+    const [isLoaded, setIsLoaded] = useState(false);
+
+    // Cleanup function to dispose of resources
+    const cleanupModel = () => {
+      if (modelRef.current) {
+        modelRef.current.traverse((child) => {
+          if (child.isMesh) {
+            child.geometry.dispose();
+            child.material.dispose();
+          }
+        });
+      }
+    };
+
+    // Handle model download
+    const handleDownload = async () => {
+      try {
+        const response = await fetch(shape.downloadUrl);
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = shape.name || 'model' + '.' + shape.modelType;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      } catch (error) {
+        console.error("Error downloading model:", error);
+      }
+    };
+
+    // Effect to cleanup on unmount
+    useEffect(() => {
+      return () => {
+        cleanupModel();
+      };
+    }, []);
+
+    // Effect to handle model loading
+    useEffect(() => {
+      setIsLoaded(false);
+      const loadModel = async () => {
+        try {
+          let loadedModel;
+          switch (shape.modelType) {
+            case "glb":
+            case "gltf":
+              loadedModel = await new Promise((resolve, reject) => {
+                const loader = new GLTFLoader();
+                loader.load(
+                  shape.modelUrl,
+                  (gltf) => {
+                    modelRef.current = gltf.scene;
+                    resolve(gltf.scene);
+                  },
+                  undefined,
+                  reject
+                );
+              });
+              break;
+            // Add similar cases for other model types if needed
+          }
+          setIsLoaded(true);
+        } catch (error) {
+          console.error("Error loading model:", error);
+        }
+      };
+
+      loadModel();
+    }, [shape.modelUrl, shape.modelType]);
+
+    if (!isLoaded) {
+      return <group><meshBasicMaterial color="gray" /></group>;
+    }
+
     try {
       switch (shape.modelType) {
         case "glb":
         case "gltf":
-          const model = useLoader(GLTFLoader, shape.modelUrl);
-          return <primitive object={model.scene} />;
+          return (
+            <group>
+              <primitive object={modelRef.current} />
+              {shape.downloadUrl && (
+                <Text3D
+                  position={[0, -1, 0]}
+                  fontSize={0.2}
+                  onClick={handleDownload}
+                  style={{ cursor: 'pointer' }}
+                >
+                  Download Model
+                  <meshStandardMaterial color="white" />
+                </Text3D>
+              )}
+            </group>
+          );
         case "obj":
           const objModel = useLoader(OBJLoader, shape.modelUrl);
-          return <primitive object={objModel} />;
+          return (
+            <group>
+              <primitive object={objModel} />
+              {shape.downloadUrl && (
+                <Text3D
+                  position={[0, -1, 0]}
+                  fontSize={0.2}
+                  onClick={handleDownload}
+                  style={{ cursor: 'pointer' }}
+                >
+                  Download Model
+                  <meshStandardMaterial color="white" />
+                </Text3D>
+              )}
+            </group>
+          );
         case "stl":
           const geometry = useLoader(STLLoader, shape.modelUrl);
           return (
-            <mesh geometry={geometry}>
-              <meshStandardMaterial color={shape.color} />
-            </mesh>
+            <group>
+              <mesh geometry={geometry}>
+                <meshStandardMaterial color={shape.color} />
+              </mesh>
+              {shape.downloadUrl && (
+                <Text3D
+                  position={[0, -1, 0]}
+                  fontSize={0.2}
+                  onClick={handleDownload}
+                  style={{ cursor: 'pointer' }}
+                >
+                  Download Model
+                  <meshStandardMaterial color="white" />
+                </Text3D>
+              )}
+            </group>
           );
         default:
           return null;
@@ -210,43 +341,121 @@ const generateImportedModelComponent = (usedImportedModels) => {
   };`;
 };
 
+const generateCustomAnimationFunctions = () => {
+  return `
+  const useCurrentFrame = (maxFrames = 100, speed = 1) => {
+    const [currentFrame, setCurrentFrame] = useState(0);
+    const direction = useRef(1); // 1 for forward, -1 for reverse
+  
+    useFrame(() => {
+      setCurrentFrame((prev) => {
+        let nextFrame = prev + direction.current * speed;
+        if (nextFrame >= maxFrames) {
+          nextFrame = maxFrames;
+          direction.current = -1;
+        } else if (nextFrame <= 0) {
+          nextFrame = 0;
+          direction.current = 1;
+        }
+        return nextFrame;
+      });
+    });
+  
+    return currentFrame;
+  };
+
+  const lerp = (start, end, t) => {
+    if (Array.isArray(start)) {
+      return start.map((s, i) => s + (end[i] - s) * t);
+    }
+    return start + (end - start) * t;
+  };
+
+  const findNearestKeyframes = (frameData, currentFrame) => {
+    if (!frameData) return { before: null, after: null };
+
+    const frames = Object.keys(frameData)
+      .map(Number)
+      .sort((a, b) => a - b);
+
+    const beforeFrame = frames.reduce((prev, frame) => {
+      if (frame <= currentFrame && frame > prev) return frame;
+      return prev;
+    }, -Infinity);
+
+    const afterFrame = frames.reduce((prev, frame) => {
+      if (frame > currentFrame && (prev === Infinity || frame < prev))
+        return frame;
+      return prev;
+    }, Infinity);
+
+    return {
+      before: beforeFrame === -Infinity ? null : beforeFrame,
+      after: afterFrame === Infinity ? null : afterFrame,
+    };
+  };
+
+  const getInterpolatedValues = (frameData, currentFrame) => {
+    if (!frameData) return null;
+
+    const { before, after } = findNearestKeyframes(frameData, currentFrame);
+
+    if (before === null && after === null) return null;
+    if (after === null) return frameData[before];
+    if (before === null) return frameData[after];
+
+    const t = (currentFrame - before) / (after - before);
+
+    return {
+      position: lerp(frameData[before].position, frameData[after].position, t),
+    };
+  };`;
+};
+
 // Generate environment component
 const generateEnvironmentComponent = (environment, backgroundColor) => {
+  console.log(environment);
+  console.log("environment");
   switch (environment) {
     case "stars":
       return `<Stars count={5000} depth={50} factor={4} saturation={0} fade speed={1} />`;
     case "sky":
       return `<Sky sunPosition={[0, 1, 0]} />`;
     case "clouds":
-      return (
-        `<Cloud 
+      return `<Cloud 
           position={[0, 15, 0]}
           opacity={0.7}
           speed={0.4}
           width={10}
           depth={1.5}
           segments={20}
-        />`
-      );
+        />`;
     case "sunset":
       return `<Environment preset="sunset" background blur={0.4} />`;
     case "color":
       return `<color attach="background" args={[${backgroundColor}]} />`;
     default:
       return null;
-  };
+  }
 };
 
 // Helper function to generate JSX for each shape
-const generateShapeJSX = (shape) => {
-  const { position, rotation, scale, color, type, texturePath, text, height } = shape;
+const generateShapeJSX = (shape, shapeAnimationData) => {
+  const { position, rotation, scale, color, type, texturePath, text, height } =
+    shape;
   const pos = `[${position.join(", ")}]`;
   const rot = `[${rotation.join(", ")}]`;
 
   const isModelType = modelConfigs[type];
   const texture = texturePath ? `useTexture('${texturePath}')` : "null";
 
-  let jsx = `<mesh position={${pos}} rotation={${rot}} scale={[${scale}, ${scale}, ${scale}]}>`;
+  let jsx = `<mesh position={${
+    shapeAnimationData && Object.keys(shapeAnimationData).length
+      ? `getInterpolatedValues(${JSON.stringify(
+          shapeAnimationData
+        )}, currentFrame)?.position`
+      : pos
+  }} rotation={${rot}} scale={[${scale}, ${scale}, ${scale}]}>`;
 
   if (shape.type === "importedModel") {
     return `<ImportedModel shape={${JSON.stringify(shape)}} />`;
@@ -299,10 +508,13 @@ const generateModelObject = () => {
             shape,
             animationStates = {},
             shapeAnimationData,
+            setCurrentFrame,
           }) => {
             const meshRef = useRef();
             const [offset] = useState(Math.random() * Math.PI * 2);
             const initialPosition = shape.position;
+            
+            setCurrentFrame(useCurrentFrame());
             
             useFrame(({ clock, mouse }) => {
               if (!meshRef.current || !animationStates[shape.id]) return;
@@ -355,20 +567,28 @@ const generateModelObject = () => {
             return <mesh ref={meshRef}>{children}</mesh>;
           };`;
 };
-
-const addModel = (shape, animationStates) => {
+const addModel = (shape, animationStates, animationData) => {
   return `<ModelObject
               key={${shape.id}}
               shape={${JSON.stringify(shape)}}
               animationStates={${JSON.stringify(animationStates)}}
+              animationData={${JSON.stringify(animationData[shape.id])}}
+              setCurrentFrame={setCurrentFrame}
             >
-            ${generateShapeJSX(shape)}
+            ${generateShapeJSX(shape, animationData[shape.id])}
             </ModelObject>`;
 };
 
 // Main export function
-const exportScene = (shapes, animationStates, environment, backgroundColor) => {
-  const { usedGeometries, usedModels, usedImportedModels, basicShapes } = analyzeShapeUsage(shapes);
+export const exportScene = (
+  shapes,
+  animationStates,
+  animationData,
+  environment,
+  backgroundColor
+) => {
+  const { usedGeometries, usedModels, usedImportedModels, basicShapes } =
+    analyzeShapeUsage(shapes);
 
   const componentCode = `${generateImports()}
     
@@ -377,19 +597,24 @@ const exportScene = (shapes, animationStates, environment, backgroundColor) => {
   ${generateModelComponent(usedModels)}
   ${generateImportedModelComponent(usedImportedModels)}
   ${generateModelObject()}
-
-
+  ${generateCustomAnimationFunctions()}
+    
   const Scene = () => {
+    const [currentFrame, setCurrentFrame] = useState(0);
+
     return (
       <div className="absolute inset-0" style={{
-        background: ${environment === "color" ? `"${backgroundColor}"` : `"transparent"`}
+        background: ${
+          environment === "color" ? `"${backgroundColor}"` : `"transparent"`
+        }
       }}>
       <Canvas camera={{ position: [5, 5, 5], fov: 50 }}>
         <ambientLight intensity={0.5} />
         <directionalLight position={[5, 5, 5]} />
         <OrbitControls makeDefault />
-          
-          ${shapes.map((shape) => addModel(shape, animationStates))}
+          ${shapes.map((shape) =>
+            addModel(shape, animationStates, animationData)
+          )}
           ${generateEnvironmentComponent(environment, backgroundColor)}
       </Canvas>
       </div>
@@ -411,11 +636,23 @@ const exportScene = (shapes, animationStates, environment, backgroundColor) => {
 };
 
 // Export button component
-export const ExportButton = ({ shapes, animationStates,environment, backgroundColor }) => {
+export const ExportButton = ({
+  shapes,
+  animationStates,
+  animationData,
+  environment,
+  backgroundColor,
+}) => {
   const [isPopupOpen, setIsPopupOpen] = useState(false);
 
   const handleExport = () => {
-    exportScene(shapes, animationStates, environment, backgroundColor);
+    exportScene(
+      shapes,
+      animationStates,
+      animationData,
+      environment,
+      backgroundColor
+    );
   };
 
   return (
@@ -426,8 +663,7 @@ export const ExportButton = ({ shapes, animationStates,environment, backgroundCo
       >
         Export Scene
       </button>
-      
-      <ExportPopup 
+      <ExportPopup
         isOpen={isPopupOpen}
         onClose={() => setIsPopupOpen(false)}
         onExport={handleExport}

@@ -5,6 +5,7 @@ import { ExportButton } from "./ExportButton";
 const ObjectProperties = ({
   shapes,
   animationStates,
+  animationData,
   selectedObject,
   updateObject,
   deleteShape,
@@ -12,7 +13,8 @@ const ObjectProperties = ({
   unselect,
   backgroundColor,
   setBackgroundColor,
-  environment, setEnvironment,
+  environment,
+  setEnvironment,
 }) => {
   const [position, setPosition] = useState({ x: 0, y: 0, z: 0 });
   const [rotation, setRotation] = useState({ x: 0, y: 0, z: 0 });
@@ -95,14 +97,13 @@ const ObjectProperties = ({
       >
         Undo
       </button>
-      <ExportButton 
-          shapes={shapes}
-          animationStates={animationStates}
-          environment={environment}
-          backgroundColor={backgroundColor}
-          
-        />
-      <h3 className="text-sm font-semibold mb-4">Modify Object:</h3>
+      <ExportButton
+        shapes={shapes}
+        animationStates={animationStates}
+        animationData={animationData}
+        environment={environment}
+        backgroundColor={backgroundColor}
+      />
 
       {selectedObject && (
         <div>

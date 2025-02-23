@@ -225,11 +225,11 @@ import React, { useState, Suspense, useRef, useEffect } from 'react';
         <directionalLight position={[5, 5, 5]} />
         <OrbitControls makeDefault />
           <ModelObject
-              key={1740311010603}
-              shape={{"position":[0,0,0],"rotation":[0,0,0],"color":"#888888","scale":1,"id":1740311010603,"type":"importedModel","modelUrl":"http://localhost:3000/download/1740311010314-116499086.glb","modelType":"glb","name":"dog.glb"}}
+              key={1740311061194}
+              shape={{"position":[0,0,0],"rotation":[0,0,0],"color":"#888888","scale":1,"id":1740311061194,"type":"importedModel","modelUrl":"http://localhost:3000/download/1740311061120-654098074.glb","modelType":"glb","name":"book.glb"}}
               animationStates={{}}
             >
-            <ImportedModel shape={{"position":[0,0,0],"rotation":[0,0,0],"color":"#888888","scale":1,"id":1740311010603,"type":"importedModel","modelUrl":"http://localhost:3000/download/1740311010314-116499086.glb","modelType":"glb","name":"dog.glb"}} />
+            <ImportedModel shape={{"position":[0,0,0],"rotation":[0,0,0],"color":"#888888","scale":1,"id":1740311061194,"type":"importedModel","modelUrl":"http://localhost:3000/download/1740311061120-654098074.glb","modelType":"glb","name":"book.glb"}} />
             </ModelObject>
       </Canvas>
       </div>
