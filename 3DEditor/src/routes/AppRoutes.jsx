@@ -1,8 +1,10 @@
-import { lazy, Suspense } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { lazy, Suspense } from "react";
+import { Routes, Route } from "react-router-dom";
+import Login from "../components/Login";
+import Signup from "../components/Signup";
 
-const Home = lazy(() => import('../components/Home'));
-const Playground = lazy(() => import('../components/Playground'));
+const Home = lazy(() => import("../components/Home"));
+const Playground = lazy(() => import("../components/Playground"));
 
 const LoadingSpinner = () => (
   <div className="min-h-screen bg-[#0A0A0B] flex items-center justify-center">
@@ -14,21 +16,37 @@ const AppRoutes = () => {
   return (
     <Suspense fallback={<LoadingSpinner />}>
       <Routes>
-        <Route 
-          path="/" 
+        <Route
+          path="/"
           element={
             <Suspense fallback={<LoadingSpinner />}>
               <Home />
             </Suspense>
-          } 
+          }
         />
-        <Route 
-          path="/playground" 
+        <Route
+          path="/playground"
           element={
             <Suspense fallback={<LoadingSpinner />}>
               <Playground />
             </Suspense>
-          } 
+          }
+        />
+        <Route
+          path="/log-in"
+          element={
+            <Suspense fallback={<LoadingSpinner />}>
+              <Login />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/sign-up"
+          element={
+            <Suspense fallback={<LoadingSpinner />}>
+              <Signup/>
+            </Suspense>
+          }
         />
       </Routes>
     </Suspense>

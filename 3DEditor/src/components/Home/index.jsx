@@ -13,7 +13,7 @@ const Home = () => {
   return (
     <div className="min-h-screen bg-[#0A0A0B] text-white relative overflow-hidden">
       <Suspense fallback={<LoadingSpinner />}>
-        <CompiledScene />
+        <Background3D />
       </Suspense>
 
       <div className="relative z-10">
@@ -75,8 +75,7 @@ const Home = () => {
             </div>
 
             <a
-              href="/playground"
-              target="_blank"
+              href="/sign-up"
               rel="noopener noreferrer"
               className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-full text-lg font-semibold transition-all duration-300 transform hover:scale-105"
             >
